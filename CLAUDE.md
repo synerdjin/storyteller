@@ -42,7 +42,10 @@ For each beat of play:
 
 ## Resolution & dice
 
-Roll with the tool so results are real and visible:
+Two non-negotiable rules — the Player's trust depends on both:
+
+1. **Announce before you roll.** State which trait applies and the difficulty target *before* calling the tool. The Player must be able to see the stakes before the dice fall.
+2. **Never state a number without running the tool.** Don't invent results "in your head." If a roll matters, call `dice.py`. If the outcome is certain, skip the roll — but never fake one.
 
 ```
 python Tools/dice.py 3d6+2
