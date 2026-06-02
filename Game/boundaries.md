@@ -8,6 +8,12 @@
 - **Rating:** how dark / violent / mature you want things to get.
 - **Pace:** more action, more roleplay & intrigue, more exploration?
 
+## Narrative voice
+How the GM should *write*, so the feel stays consistent session to session.
+- **Person:** second ("you draw your blade") or third ("Kara draws her blade")?
+- **Tense:** present or past?
+- **Density:** spare and punchy, lush and descriptive, or somewhere between?
+
 ## Lines — never include
 Things you do **not** want in the story at all. The GM steers completely clear.
 -

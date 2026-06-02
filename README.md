@@ -53,6 +53,8 @@ The GM keeps its secrets in `Game/gm-secrets.md` and each character's `Cast/<nam
 
 If you want undo and the ability to branch alternate timelines, the GM can save your progress with git after each session. It'll ask first.
 
+A gentle word: save points are for *stopping and resuming*, or for deliberately exploring a "what if" timeline — not for reloading the instant a roll goes against you. The stakes are what make a win feel earned; quietly reverting every setback removes them. Play your bad rolls and see where the story takes you. 🎲
+
 ## Models
 
 Each role runs on the model that fits how it's used. The one-time creative builders use Opus; the constantly-running roles use Sonnet (cheaper and faster).

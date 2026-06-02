@@ -1,6 +1,6 @@
 # <Name>
 
-> **Public profile.** This is the ONLY file handed to the actor who voices this character. Everything here is something the character knows about themselves and would act on or reveal. Keep secrets out — they go in `secrets.md`.
+> **Public profile.** This file and `memory.md` are what get handed to the actor who voices this character — never `secrets.md`. Everything here is something the character knows about themselves and would act on or reveal. Keep secrets out — they go in `secrets.md`.
 
 ## At a glance
 - **Role / relationship to the party:**
