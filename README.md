@@ -4,6 +4,20 @@ An AI-run tabletop roleplaying game. Open this project, talk to Claude, and it b
 
 No prior tabletop experience needed. The GM teaches you as you go.
 
+## Get your own copy
+
+This repository is the **engine** — a reusable template. To actually play, make your own copy so your story stays yours:
+
+1. On GitHub, click **"Use this template" → "Create a new repository."**
+2. Set it to **Private** and name it for your campaign (e.g. `my-first-campaign`).
+3. Clone your new repo and open it in Claude Code.
+
+Your copy is where you play: your character, your world, and your **save points** all commit to *your* private repo — with full history and the ability to revert a bad session — while this public engine stays clean for the next person.
+
+> **Already in your own copy?** Skip to [How to start](#how-to-start).
+
+*Improving the engine itself? Changes you make here don't automatically reach campaigns you've already started — copy updated files (`CLAUDE.md`, `.claude/agents/`, `Tools/`) over by hand.*
+
 ## How to start
 
 Open the project and tell Claude:
