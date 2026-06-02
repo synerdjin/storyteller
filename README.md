@@ -38,3 +38,16 @@ The GM keeps its secrets in `Game/gm-secrets.md` and each character's `Cast/<nam
 ## Save points (optional)
 
 If you want undo and the ability to branch alternate timelines, the GM can save your progress with git after each session. It'll ask first.
+
+## Models
+
+Each role runs on the model that fits how it's used. The one-time creative builders use Opus; the constantly-running roles use Sonnet (cheaper and faster).
+
+| Role | Model | Set in |
+|------|-------|--------|
+| campaign-architect | Opus | `.claude/agents/campaign-architect.md` (frontmatter) |
+| character-creator | Opus | `.claude/agents/character-creator.md` (frontmatter) |
+| Game Master (main session) | Sonnet | `.claude/settings.json` (project default) |
+| npc-actor | Sonnet | `.claude/agents/npc-actor.md` (frontmatter) |
+
+To change any of them, edit the `model:` line in that agent's file (`opus` / `sonnet` / `haiku`). The Game Master is the session model — `.claude/settings.json` sets the default when you open the project, and you can switch any time with `/model`.
