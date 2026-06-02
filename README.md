@@ -16,7 +16,7 @@ Your copy is where you play: your character, your world, and your **save points*
 
 > **Already in your own copy?** Skip to [How to start](#how-to-start).
 
-*Improving the engine itself? Changes you make here don't automatically reach campaigns you've already started — copy updated files (`CLAUDE.md`, `.claude/agents/`, `Tools/`) over by hand.*
+*When a newer version of the engine ships, you don't have to copy files by hand — you can pull the updated system files into a campaign you've already started without disturbing your story. See [Updating the engine](#updating-the-engine).*
 
 ## How to start
 
@@ -54,6 +54,16 @@ The GM keeps its secrets in `Game/gm-secrets.md` and each character's `Cast/<nam
 If you want undo and the ability to branch alternate timelines, the GM can save your progress with git after each session. It'll ask first.
 
 A gentle word: save points are for *stopping and resuming*, or for deliberately exploring a "what if" timeline — not for reloading the instant a roll goes against you. The stakes are what make a win feel earned; quietly reverting every setback removes them. Play your bad rolls and see where the story takes you. 🎲
+
+## Updating the engine
+
+The engine keeps improving — sharper GM instructions, smarter agents, the occasional new tool. To pull those improvements into a campaign you've already started, just tell the GM:
+
+> **"Update storyteller."**
+
+It saves a restore point, fetches the latest engine, and overwrites **only the system files** (`CLAUDE.md`, the agents, `Tools/`, the docs and templates). Your character, world, timeline, cast, and any rulebooks you've added are left exactly as they were. If a new version changes the *shape* of a file you've filled in, the GM shows you what's new and splices it in with you — it never erases your story. When it's done, it saves a second restore point, so the whole update is something you can roll back like any other save.
+
+> One caveat if you like to tinker: updating **replaces** the engine files, so if you've hand-edited `CLAUDE.md`, the agents, or `Tools/`, commit your changes first and re-apply them after — or contribute them back upstream. The full mechanism (and the exact list of what's touched vs. protected) lives in [`UPDATING.md`](UPDATING.md).
 
 ## Models
 

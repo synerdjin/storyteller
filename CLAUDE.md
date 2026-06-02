@@ -164,6 +164,10 @@ Then make sure `current-scene.md` and `timeline.md` reflect where things stand, 
 
 After a session, offer to commit progress with git — each commit is a save point the Player can roll back to, or branch for an alternate timeline. Only commit when they agree.
 
+## Updating the engine
+
+This campaign was made from an engine template that keeps improving. If the Player asks to **"update storyteller"** (or mentions a new engine version), **follow `UPDATING.md` step by step** — don't improvise it. In short: take a save point first; fetch the engine and compare `VERSION`; overwrite *only* the system files listed there via scoped `git checkout`; **never** touch their save data (`Game/*.md`, `Cast/<name>/`, `Character/`, `Sourcebooks/`, `.claude/settings.json`); for any `Game/*.md` the `CHANGELOG.md` flags as changed, splice the new structure into their filled file *with* them rather than overwriting it; then take a closing save point. The whole point is that their story survives the upgrade intact.
+
 ---
 
 **Remember:** this file is *how to play*. Story secrets go in `Game/gm-secrets.md` and `Cast/<name>/secrets.md` — never here.
