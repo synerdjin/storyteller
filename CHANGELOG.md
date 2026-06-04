@@ -11,6 +11,20 @@ Version numbers are `MAJOR.MINOR.PATCH`:
 
 ---
 
+## 1.2.0 — 2026-06-04
+
+### Added
+- **The living world — an opt-in off-screen simulation.** Important NPCs and factions can now pursue their own goals between scenes, so cautious solo play no longer drifts into dead air and the world's threats advance *fairly* instead of only when convenient. It's a two-layer hybrid:
+  - **`Tools/world_tick.py`** — a deterministic, dependency-free "metronome" (the `dice.py` of the simulation). It parses the structured state of every living agent, advances their progress clocks by fixed rules, fires finite-state-machine transitions whose guards are met, and selects the few most pressing agents for deliberation — writing an ephemeral queue. It decides *which* threats move; it invents no narrative. Has a built-in `--self-test`.
+  - **`.claude/agents/world-director.md`** — a GM-side "drama manager" subagent (opus) that reads the queue and decides *what* each flagged agent actually does off-screen, biased toward dramatic pressure but resolved honestly (no faked dice, no retro-filled clocks). It writes consequences back to the agents' files and stages player-facing developments. **Crucially distinct from `npc-actor`:** the director is trusted with secrets because it advances hidden agendas; the actor still runs blind. The two roles are never to be confused.
+  - **`Cast/_template/drives.md`** — the optional, GM-only file that makes an NPC "living": a small machine-readable block (state, goal, clock, FSM, salience) plus prose agenda and accumulating reflection notes. Never handed to the `npc-actor`, alongside `secrets.md` and `sheet.md`.
+  - New GM-only scaffolds **`Game/world-state.md`** (living factions + world clocks + roster) and **`Game/developments.md`** (the director's staged, curated inbox of off-screen moves and when each should surface).
+- **`CLAUDE.md` gains a "The living world — ticking it" section** (after Progress clocks): how to promote an agent to living, the two-step tick loop, that the metronome's selection is binding, and how to drain `developments.md` into scenes. Includes an **optional Cowork recipe** for running ticks as a scheduled task between sessions.
+- **`Cast/CRAFTING-NPCS.md` lever #5 ("Agency off-screen")** now points at the living-world loop, and `Cast/README.md` documents `drives.md`.
+
+### Campaign migration
+- **None required.** The feature is additive and **inert until you opt in** — a campaign with no `drives.md` files and an unfilled `world-state.md` plays exactly as before. The two new `Game/` scaffolds are story files (never overwritten by future updates); the tool, subagent, and template are engine files. To bring the world to life in an existing campaign, ask the GM to promote an NPC: copy `Cast/_template/drives.md` into their folder and fill it in.
+
 ## 1.1.1 — 2026-06-04
 
 ### Changed

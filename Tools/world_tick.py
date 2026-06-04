@@ -1,0 +1,592 @@
+#!/usr/bin/env python3
+"""The living-world metronome for the Storyteller Game Master.
+
+This is to the living world what dice.py is to a roll: the *deterministic,
+auditable* layer. It does not invent anything. It reads the structured state of
+every "living" NPC and faction, advances their progress clocks by fixed rules,
+fires finite-state-machine transitions whose guards are met, and then SELECTS
+which few of them are pressing enough to deliberate this tick. The narrative —
+*what* a flagged character actually does off-screen — is decided afterward by
+the `world-director` subagent, never here.
+
+Why a script and not just the GM? The same reason rolls go through dice.py:
+so the GM cannot quietly advance only the convenient threats. The clock math is
+binding and shown.
+
+Usage:
+    python world_tick.py                 # a normal beat: 1 unit of time passes
+    python world_tick.py --elapsed 3     # a time-skip: 3 units pass
+    python world_tick.py --dawdle        # the Player stalled; 'dawdle' clocks tick
+    python world_tick.py --fail          # a roll failed forward; 'on_fail' clocks tick
+    python world_tick.py --max 3         # cap how many agents are queued (default 3)
+    python world_tick.py --dry-run       # compute & print, but DON'T write any files
+    python world_tick.py --self-test     # run built-in assertions and exit
+
+What it reads (any file with a `living: true` block):
+    Cast/<name>/drives.md     — one YAML front-matter block per living NPC
+    Game/world-state.md       — a front-matter block (world clocks) and/or
+                                fenced ```yaml blocks under `## ` headings (factions)
+
+What it writes:
+    - the advanced `state:`/`clock:` values, surgically, back into those same files
+      (comments and prose untouched)
+    - Game/.world-tick-queue.md — the hand-off for the world-director subagent
+
+Block shape (the controlled YAML subset this parses):
+    living: true
+    state: scheming
+    goal: "Seize the harbor council seat before the festival"
+    clock: { filled: 2, total: 6 }
+    advances_when: dawdle        # always | dawdle | on_fail | manual
+    salience: 3                  # 1-5, gates selection priority
+    states:
+      scheming:    { to: moving,      when: "clock>=3" }
+      moving:      { to: confronting, when: "clock>=5" }
+      confronting: { to: regrouping,  when: "always" }
+"""
+
+import argparse
+import re
+import sys
+from pathlib import Path
+
+# --------------------------------------------------------------------------- #
+# A tiny, dependency-free parser for the controlled YAML subset above.
+# It is intentionally NOT a general YAML parser — it understands exactly the
+# block shape this tool documents, and nothing more.
+# --------------------------------------------------------------------------- #
+
+_INT_RE = re.compile(r"^-?\d+$")
+_GUARD_RE = re.compile(r"^clock\s*(>=|<=|==|!=|>|<)\s*(\d+)$")
+
+
+def _strip_comment(line):
+    """Drop a trailing `# comment`, but not a `#` inside quotes."""
+    out, in_q = [], None
+    for ch in line:
+        if in_q:
+            out.append(ch)
+            if ch == in_q:
+                in_q = None
+        elif ch in "\"'":
+            in_q = ch
+            out.append(ch)
+        elif ch == "#":
+            break
+        else:
+            out.append(ch)
+    return "".join(out)
+
+
+def _split_top(s):
+    """Split on commas that are not inside quotes or braces."""
+    parts, depth, in_q, cur = [], 0, None, ""
+    for ch in s:
+        if in_q:
+            cur += ch
+            if ch == in_q:
+                in_q = None
+        elif ch in "\"'":
+            in_q = ch
+            cur += ch
+        elif ch == "{":
+            depth += 1
+            cur += ch
+        elif ch == "}":
+            depth -= 1
+            cur += ch
+        elif ch == "," and depth == 0:
+            parts.append(cur)
+            cur = ""
+        else:
+            cur += ch
+    if cur.strip():
+        parts.append(cur)
+    return parts
+
+
+def _parse_scalar(s):
+    s = s.strip()
+    if s == "":
+        return None
+    if s.startswith("{") and s.endswith("}"):
+        return _parse_inline_map(s)
+    if len(s) >= 2 and s[0] == s[-1] and s[0] in "\"'":
+        return s[1:-1]
+    low = s.lower()
+    if low in ("true", "false"):
+        return low == "true"
+    if _INT_RE.match(s):
+        return int(s)
+    return s
+
+
+def _parse_inline_map(s):
+    inner = s.strip()[1:-1].strip()
+    d = {}
+    if not inner:
+        return d
+    for part in _split_top(inner):
+        k, _, v = part.partition(":")
+        d[k.strip()] = _parse_scalar(v)
+    return d
+
+
+def parse_block(text):
+    """Parse a block of `key: value` lines (with one level of `key:`-nesting)."""
+    entries = []
+    for raw in text.splitlines():
+        line = _strip_comment(raw)
+        if line.strip() == "":
+            continue
+        indent = len(line) - len(line.lstrip(" "))
+        entries.append((indent, line.strip()))
+
+    d, i, n = {}, 0, len(entries)
+    while i < n:
+        indent, content = entries[i]
+        if indent != 0:
+            i += 1
+            continue
+        key, _, rest = content.partition(":")
+        key, rest = key.strip(), rest.strip()
+        if rest == "":
+            children, j = {}, i + 1
+            while j < n and entries[j][0] > 0:
+                ck, _, cv = entries[j][1].partition(":")
+                children[ck.strip()] = _parse_scalar(cv.strip())
+                j += 1
+            d[key] = children
+            i = j
+        else:
+            d[key] = _parse_scalar(rest)
+            i += 1
+    return d
+
+
+# --------------------------------------------------------------------------- #
+# Locating living blocks in files, tracking each block's line span so we can
+# write changes back surgically (touching only the state/clock lines).
+# --------------------------------------------------------------------------- #
+
+
+class Agent:
+    """One living NPC or faction: its parsed fields and where they live on disk."""
+
+    def __init__(self, name, fields, path, span):
+        self.name = name
+        self.fields = fields
+        self.path = path          # Path to the file
+        self.span = span          # (start, end) line indices of the block body
+        # tick results, filled in by tick():
+        self.advanced = 0
+        self.transitioned = False
+        self.became_full = False
+        self.old_state = fields.get("state")
+        self.old_filled = _clock(fields).get("filled", 0)
+
+
+def _clock(fields):
+    c = fields.get("clock")
+    return c if isinstance(c, dict) else {}
+
+
+def _frontmatter_block(lines):
+    """If `lines` opens with a --- front-matter block, return (start, end)."""
+    if not lines or lines[0].strip() != "---":
+        return None
+    for k in range(1, len(lines)):
+        if lines[k].strip() == "---":
+            return (1, k)  # body is lines[1:k]
+    return None
+
+
+def _fenced_blocks(lines):
+    """Yield (heading, start, end) for each ```yaml ... ``` fence, with the
+    nearest preceding `#`-heading as its name."""
+    blocks, heading, i, n = [], None, 0, len(lines)
+    while i < n:
+        s = lines[i].strip()
+        if s.startswith("#"):
+            heading = s.lstrip("#").strip()
+        if re.match(r"^```+\s*ya?ml\s*$", s):
+            start = i + 1
+            j = start
+            while j < n and not lines[j].strip().startswith("```"):
+                j += 1
+            blocks.append((heading, start, j))
+            i = j + 1
+            continue
+        i += 1
+    return blocks
+
+
+def discover_agents(root):
+    """Find every living NPC (Cast/*/drives.md) and faction/world block."""
+    agents = []
+
+    for drives in sorted(root.glob("Cast/*/drives.md")):
+        if drives.parent.name.startswith("_"):
+            continue  # skip Cast/_template/ and any other skeleton folder
+        lines = drives.read_text(encoding="utf-8").splitlines()
+        span = _frontmatter_block(lines)
+        if not span:
+            continue
+        fields = parse_block("\n".join(lines[span[0]:span[1]]))
+        if fields.get("living") is True:
+            agents.append(Agent(drives.parent.name, fields, drives, span))
+
+    world = root / "Game" / "world-state.md"
+    if world.exists():
+        lines = world.read_text(encoding="utf-8").splitlines()
+        fm = _frontmatter_block(lines)
+        if fm:
+            fields = parse_block("\n".join(lines[fm[0]:fm[1]]))
+            if fields.get("living") is True:
+                agents.append(Agent(fields.get("name", "world"), fields, world, fm))
+        for heading, start, end in _fenced_blocks(lines):
+            fields = parse_block("\n".join(lines[start:end]))
+            if fields.get("living") is True:
+                agents.append(Agent(heading or "faction", fields, world, (start, end)))
+
+    return agents
+
+
+# --------------------------------------------------------------------------- #
+# The tick rules — deterministic, no randomness, no narrative.
+# --------------------------------------------------------------------------- #
+
+
+def eval_guard(guard, filled, total):
+    """Evaluate an FSM transition guard against the current clock."""
+    if guard is None:
+        return False
+    g = str(guard).strip()
+    if g == "always":
+        return True
+    if g == "clock_full":
+        return filled >= total
+    m = _GUARD_RE.match(g)
+    if not m:
+        return False  # unknown guard never fires — fail safe, never crash play
+    op, num = m.group(1), int(m.group(2))
+    return {
+        ">=": filled >= num, "<=": filled <= num, "==": filled == num,
+        "!=": filled != num, ">": filled > num, "<": filled < num,
+    }[op]
+
+
+def advance_amount(advances_when, elapsed, dawdle, fail):
+    aw = (advances_when or "manual")
+    if aw == "always":
+        return elapsed
+    if aw == "dawdle":
+        return 1 if dawdle else 0
+    if aw in ("on_fail", "fail"):
+        return 1 if fail else 0
+    return 0  # manual: only the director moves it
+
+
+def tick(agent, elapsed, dawdle, fail):
+    """Advance one agent's clock and fire at most one FSM transition."""
+    clock = _clock(agent.fields)
+    filled = int(clock.get("filled", 0))
+    total = int(clock.get("total", 0))
+    state = agent.fields.get("state")
+    states = agent.fields.get("states") or {}
+
+    adv = advance_amount(agent.fields.get("advances_when"), elapsed, dawdle, fail)
+    new_filled = min(total, filled + adv) if total else filled + adv
+    agent.advanced = new_filled - filled
+    agent.became_full = total > 0 and new_filled >= total and filled < total
+
+    transition = states.get(state) if isinstance(states, dict) else None
+    if isinstance(transition, dict):
+        guard, target = transition.get("when"), transition.get("to")
+        if target and eval_guard(guard, new_filled, total):
+            state = target
+            agent.transitioned = True
+
+    # record results back into fields (write_back persists these to disk)
+    clock["filled"] = new_filled
+    agent.fields["clock"] = clock
+    agent.fields["state"] = state
+
+
+def priority(agent):
+    """Deterministic selection score: who most deserves the director's attention."""
+    sal = agent.fields.get("salience")
+    sal = sal if isinstance(sal, int) else 1
+    return (
+        sal
+        + (3 if agent.transitioned else 0)
+        + (2 if agent.became_full else 0)
+        + (1 if agent.advanced else 0)
+    )
+
+
+def changed(agent):
+    return bool(agent.advanced) or agent.transitioned
+
+
+# --------------------------------------------------------------------------- #
+# Surgical write-back: rewrite ONLY the state: and clock: lines within a
+# block's span, preserving comments, prose, and every other line.
+# --------------------------------------------------------------------------- #
+
+_STATE_LINE = re.compile(r"^(\s*state:\s*)(\S+)(.*)$")
+_FILLED = re.compile(r"(filled:\s*)(-?\d+)")
+
+
+def write_back(agents):
+    """Persist advanced state/clock for changed agents, grouped by file."""
+    by_file = {}
+    for a in agents:
+        if changed(a):
+            by_file.setdefault(a.path, []).append(a)
+
+    for path, file_agents in by_file.items():
+        lines = path.read_text(encoding="utf-8").splitlines()
+        for a in file_agents:
+            start, end = a.span
+            new_state = a.fields.get("state")
+            new_filled = _clock(a.fields).get("filled")
+            for idx in range(start, min(end, len(lines))):
+                line = lines[idx]
+                if _STATE_LINE.match(line) and new_state is not None:
+                    lines[idx] = _STATE_LINE.sub(rf"\g<1>{new_state}\g<3>", line)
+                elif "clock:" in line and "filled:" in line and new_filled is not None:
+                    lines[idx] = _FILLED.sub(rf"\g<1>{new_filled}", line)
+        path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
+# --------------------------------------------------------------------------- #
+# Output: a human-readable summary, and the queue file for the director.
+# --------------------------------------------------------------------------- #
+
+
+def summarize(agents, selected, args):
+    out = []
+    flags = []
+    if args.elapsed != 1:
+        flags.append(f"elapsed={args.elapsed}")
+    if args.dawdle:
+        flags.append("dawdle")
+    if args.fail:
+        flags.append("fail")
+    out.append(f"World tick ({', '.join(flags) or 'one beat'}): "
+               f"{len(agents)} living, {sum(changed(a) for a in agents)} moved, "
+               f"{len(selected)} queued.")
+    if not agents:
+        out.append("  (No living NPCs or factions. The world is static - "
+                   "promote someone with a drives.md to bring it to life.)")
+    for a in agents:
+        if not changed(a):
+            continue
+        c = _clock(a.fields)
+        bits = []
+        if a.advanced:
+            bits.append(f"clock {a.old_filled}->{c.get('filled')}/{c.get('total')}")
+        if a.transitioned:
+            bits.append(f"state {a.old_state} -> {a.fields.get('state')}")
+        star = " *QUEUED*" if a in selected else ""
+        out.append(f"  - {a.name}: {', '.join(bits)}{star}")
+    return "\n".join(out)
+
+
+def write_queue(root, selected, args, dry_run):
+    path = root / "Game" / ".world-tick-queue.md"
+    lines = [
+        "# World-tick queue (for the world-director subagent)",
+        "",
+        "> Generated by `Tools/world_tick.py`. Ephemeral hand-off — the director",
+        "> reads this, decides what each agent *does* off-screen, then writes the",
+        "> narrative consequences. Safe to delete after deliberation.",
+        "",
+        f"Tick: elapsed={args.elapsed}, dawdle={args.dawdle}, fail={args.fail}.",
+        "",
+    ]
+    if not selected:
+        lines.append("**Queue empty.** Nothing pressing advanced this tick — "
+                     "no deliberation needed.")
+    for a in selected:
+        c = _clock(a.fields)
+        why = []
+        if a.transitioned:
+            why.append(f"entered **{a.fields.get('state')}** (was {a.old_state})")
+        if a.became_full:
+            why.append("**clock filled**")
+        elif a.advanced:
+            why.append(f"clock advanced to {c.get('filled')}/{c.get('total')}")
+        lines += [
+            f"## {a.name}",
+            f"- Source: `{a.path.as_posix()}`",
+            f"- State: `{a.fields.get('state')}`  |  "
+            f"Clock: {c.get('filled')}/{c.get('total')}  |  "
+            f"Salience: {a.fields.get('salience')}",
+            f"- Goal: {a.fields.get('goal')}",
+            f"- Why flagged: {', '.join(why) or 'changed'}",
+            "- Director: read this agent's full folder (profile/secrets/memory/drives), "
+            "decide what they do off-screen now, and record the consequences.",
+            "",
+        ]
+    text = "\n".join(lines) + "\n"
+    if not dry_run:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(text, encoding="utf-8")
+    return path, text
+
+
+# --------------------------------------------------------------------------- #
+# Entry point
+# --------------------------------------------------------------------------- #
+
+
+def run(root, args):
+    agents = discover_agents(root)
+    for a in agents:
+        tick(a, args.elapsed, args.dawdle, args.fail)
+    candidates = sorted(
+        (a for a in agents if changed(a)),
+        key=lambda a: (-priority(a), a.name),
+    )
+    selected = candidates[: args.max]
+    if not args.dry_run:
+        write_back(agents)
+    _, _ = write_queue(root, selected, args, args.dry_run)
+    print(summarize(agents, selected, args))
+    if args.dry_run:
+        print("  (--dry-run: no files written.)")
+    return 0
+
+
+def _find_root(start):
+    """Walk up from cwd to find the campaign root (has CLAUDE.md or Game/)."""
+    cur = start.resolve()
+    for cand in [cur, *cur.parents]:
+        if (cand / "CLAUDE.md").exists() or (cand / "Game").is_dir():
+            return cand
+    return start
+
+
+def main(argv):
+    p = argparse.ArgumentParser(description="Advance the living world by one tick.")
+    p.add_argument("--elapsed", type=int, default=1,
+                   help="units of time passing (default 1; use for time-skips)")
+    p.add_argument("--dawdle", action="store_true",
+                   help="the Player stalled — advance 'dawdle' clocks")
+    p.add_argument("--fail", action="store_true",
+                   help="a roll failed forward — advance 'on_fail' clocks")
+    p.add_argument("--max", type=int, default=3,
+                   help="max agents to queue for deliberation (default 3)")
+    p.add_argument("--dry-run", action="store_true",
+                   help="compute and print, but write no files")
+    p.add_argument("--self-test", action="store_true",
+                   help="run built-in assertions and exit")
+    args = p.parse_args(argv[1:])
+
+    if args.self_test:
+        return _self_test()
+
+    root = _find_root(Path.cwd())
+    try:
+        return run(root, args)
+    except Exception as e:  # never crash a play session over a malformed block
+        print(f"world_tick error: {e}\n(The world stands still this tick.)")
+        return 1
+
+
+# --------------------------------------------------------------------------- #
+# Built-in self-test (python world_tick.py --self-test)
+# --------------------------------------------------------------------------- #
+
+
+def _self_test():
+    import tempfile
+
+    # --- parser ---
+    fields = parse_block(
+        'living: true\n'
+        'state: scheming\n'
+        'goal: "Seize the seat"\n'
+        'clock: { filled: 2, total: 6 }\n'
+        'advances_when: dawdle\n'
+        'salience: 3\n'
+        'states:\n'
+        '  scheming: { to: moving, when: "clock>=3" }\n'
+        '  moving: { to: confronting, when: "always" }\n'
+    )
+    assert fields["living"] is True
+    assert fields["goal"] == "Seize the seat"
+    assert fields["clock"] == {"filled": 2, "total": 6}
+    assert fields["states"]["scheming"] == {"to": "moving", "when": "clock>=3"}
+
+    # --- guards ---
+    assert eval_guard("always", 0, 6) is True
+    assert eval_guard("clock>=3", 3, 6) is True
+    assert eval_guard("clock>=3", 2, 6) is False
+    assert eval_guard("clock_full", 6, 6) is True
+    assert eval_guard("garbage", 9, 9) is False  # unknown never fires
+
+    # --- advancement amounts ---
+    assert advance_amount("always", 3, False, False) == 3
+    assert advance_amount("dawdle", 3, True, False) == 1
+    assert advance_amount("dawdle", 3, False, False) == 0
+    assert advance_amount("on_fail", 1, False, True) == 1
+    assert advance_amount("manual", 9, True, True) == 0
+
+    # --- end-to-end tick + transition + selection + surgical write-back ---
+    with tempfile.TemporaryDirectory() as d:
+        root = Path(d)
+        (root / "CLAUDE.md").write_text("x", encoding="utf-8")
+        npc = root / "Cast" / "vance"
+        npc.mkdir(parents=True)
+        drives = npc / "drives.md"
+        drives.write_text(
+            "---\n"
+            "living: true\n"
+            "state: scheming          # current node\n"
+            'goal: "Take the seat"\n'
+            "clock: { filled: 2, total: 3 }\n"
+            "advances_when: dawdle\n"
+            "salience: 4\n"
+            "states:\n"
+            "  scheming: { to: moving, when: \"clock>=3\" }\n"
+            "---\n\n"
+            "## Agenda\nProse the director reads.\n",
+            encoding="utf-8",
+        )
+        # a non-living NPC must be ignored
+        idle = root / "Cast" / "extra"
+        idle.mkdir(parents=True)
+        (idle / "drives.md").write_text(
+            "---\nliving: false\nstate: idle\n---\n", encoding="utf-8")
+        # the _template skeleton must be skipped even though it says living: true
+        tmpl = root / "Cast" / "_template"
+        tmpl.mkdir(parents=True)
+        (tmpl / "drives.md").write_text(
+            "---\nliving: true\nstate: scheming\nclock: { filled: 0, total: 3 }\n"
+            "advances_when: always\n---\n", encoding="utf-8")
+
+        class A:  # minimal args
+            elapsed, dawdle, fail, max, dry_run = 1, True, False, 3, False
+
+        run(root, A())
+
+        text = drives.read_text(encoding="utf-8")
+        assert "state: moving" in text, "state should have transitioned and persisted"
+        assert "filled: 3" in text, "clock should have advanced and persisted"
+        assert "# current node" in text, "trailing comment must be preserved"
+        assert "## Agenda" in text, "prose body must be preserved"
+
+        queue = (root / "Game" / ".world-tick-queue.md").read_text(encoding="utf-8")
+        assert "vance" in queue and "extra" not in queue, "only living, moved agents queue"
+        assert "_template" not in queue, "the _template skeleton must never be ticked"
+        assert "entered **moving**" in queue
+
+    print("world_tick self-test: OK")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv))
