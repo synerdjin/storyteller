@@ -8,6 +8,13 @@
 ## What they're hiding
 - The lies they tell, the things they conceal, and the tell that might give them away under pressure.
 
+## What drives them (the depth they don't see)
+*For important/recurring characters — see `Cast/CRAFTING-NPCS.md`. Skip for walk-ons.*
+- **The need they can't see:** the want beneath the stated want — what would actually heal them, often contradicting what they chase.
+- **The wound / the lie:** the formative injury and the false belief their behavior defends. You don't narrate it; you let it leak through what they overreact to.
+- **Their moral breaking point:** the line they believe they'd never cross — and the exact pressure that would make them cross it. (This is where their best scene is waiting.)
+- **How they'd change under pressure:** which way they bend or break if the story leans on them hard.
+
 ## Reveal conditions
 - What would expose this, and what should happen when it does.
 

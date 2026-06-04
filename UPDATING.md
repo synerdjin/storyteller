@@ -10,7 +10,7 @@ The engine sorts every file into three buckets. An update **only ever overwrites
 
 | Bucket | What happens on update | Files |
 |---|---|---|
-| **Engine** — shipped by the template, never edited by play | **Overwritten** with the latest version | `CLAUDE.md`, `UPDATING.md`, `VERSION`, `CHANGELOG.md`, `LICENSE`, `README.md`, `.gitignore`, `.claude/agents/` (all agents), `Tools/dice.py`, `Cast/README.md`, `Cast/_template/`, `Sourcebooks/README.md`, `Sourcebooks/_digests/.gitkeep`, `Character/README.md`, `Character/portraits/.gitkeep` |
+| **Engine** — shipped by the template, never edited by play | **Overwritten** with the latest version | `CLAUDE.md`, `UPDATING.md`, `VERSION`, `CHANGELOG.md`, `LICENSE`, `README.md`, `.gitignore`, `.claude/agents/` (all agents), `Tools/dice.py`, `Cast/README.md`, `Cast/CRAFTING-NPCS.md`, `Cast/_template/`, `Sourcebooks/README.md`, `Sourcebooks/_digests/.gitkeep`, `Character/README.md`, `Character/portraits/.gitkeep` |
 | **Your story (scaffolds)** — shipped empty, filled by play | **Never overwritten.** If a new version changes the *structure*, the GM splices it in interactively | `Game/boundaries.md`, `Game/campaign.md`, `Game/world.md`, `Game/timeline.md`, `Game/current-scene.md`, `Game/threads.md`, `Game/gm-secrets.md` |
 | **Your story + your config** — never part of the engine | **Never touched** | `.claude/settings.json` (your model choices), `Character/sheet.md`, `Character/backstory.md`, your real portraits, every `Cast/<name>/` folder you've created, the rulebooks and digests in `Sourcebooks/` |
 
@@ -42,7 +42,7 @@ If the two versions match, you're up to date — stop here. Otherwise, summarize
 
 **4. Overwrite the Engine-bucket files.** First confirm the authoritative, *up-to-date* file list from the incoming version (a new release may add files): `git show engine/main:UPDATING.md` and read its table. Then pull those paths from the engine ref into your working tree:
 ```
-git checkout engine/main -- CLAUDE.md UPDATING.md VERSION CHANGELOG.md LICENSE README.md .gitignore .claude/agents Tools/dice.py Cast/README.md Cast/_template Sourcebooks/README.md Sourcebooks/_digests/.gitkeep Character/README.md Character/portraits/.gitkeep
+git checkout engine/main -- CLAUDE.md UPDATING.md VERSION CHANGELOG.md LICENSE README.md .gitignore .claude/agents Tools/dice.py Cast/README.md Cast/CRAFTING-NPCS.md Cast/_template Sourcebooks/README.md Sourcebooks/_digests/.gitkeep Character/README.md Character/portraits/.gitkeep
 ```
 This overwrites only the named paths. Your `Game/*.md`, `Cast/<name>/`, `Character/sheet.md`, `.claude/settings.json`, and `Sourcebooks/` content are not named, so they don't move. (If the CHANGELOG says a file was **removed** in this release, delete your local copy by hand.)
 

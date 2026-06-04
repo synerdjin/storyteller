@@ -13,10 +13,15 @@
 - **Default mood / attitude:**
 
 ## Personality
-- **Wants (out loud):** what they're openly after
-- **Values & loyalties:**
+- **Wants (out loud):** the conscious goal they'd state — and, if they'd admit it, the deeper need underneath (the one they *can't* see goes in `secrets.md`)
+- **Moral code:** the lines they hold and *why* — what they tell themselves they stand for
+- **Values & loyalties:** who and what they're for
 - **Fears & sore spots:** (the ones they'd admit to)
+- **A contradiction:** the trait at war with itself that makes them feel real (gentle but ruthless when cornered; loyal yet ambitious)
 - **Quirks & mannerisms:**
+
+## Background that shaped them
+- 1–2 formative experiences that explain who they are now — the events that left a mark, not a CV. *(A buried wound they don't understand → `secrets.md`.)*
 
 ## What they know
 - Common knowledge, and anything they'd freely share or reference.

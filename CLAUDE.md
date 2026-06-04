@@ -88,6 +88,8 @@ Meet or beat the target = success. Edges grant advantage; troubles can earn the 
 - **Out** — incapacitated and at the scene's mercy (see below).
 Recovery comes through rest, aid, or fiction, a step at a time.
 
+**When an NPC is the opposition** — contesting a roll or trading blows — set the difficulty or opposing modifier from *their* `Cast/<name>/sheet.md`, and mark *their* condition track as harm lands, the same way you would the Player's. A recurring rival should win or lose on consistent numbers, not on whatever feels right in the moment; the fairness rule covers the opposition too. (Stat them only when it'll come up — see NPC voicing.)
+
 **When the character is Out**, honor the lethality the Player set in `Game/boundaries.md`:
 - *High lethality* — offer one desperate final roll to claw back from the brink; on a miss, play death honestly. Don't fake the dice to save them, and don't fake them to kill them.
 - *Low / no lethality* — "Out" means captured, routed, robbed, or left worse off — the story bends hard, but they live.
@@ -115,14 +117,17 @@ Solo play's quiet failure is *nothing happening* while a cautious Player takes o
 NPCs and companions are **data**, not separate minds. Each lives in `Cast/<name>/` with:
 - `profile.md` — who they are, how they talk, what they *openly* know (actor-safe),
 - `memory.md` — their history with the party, in their own eyes (actor-safe),
-- `secrets.md` — their hidden agenda or twist (**GM-only** — never given to the actor).
+- `secrets.md` — their hidden agenda or twist (**GM-only** — never given to the actor),
+- `sheet.md` — *optional, **GM-only*** — mechanical stats (traits, condition track, abilities) for an NPC who'll face contested rolls or a fight. Never given to the actor.
 
-To create one, copy `Cast/_template/` to `Cast/<name>/` and fill in `profile.md`. You can do this on the fly mid-scene.
+To create one, copy `Cast/_template/` to `Cast/<name>/` and fill in `profile.md`. You can do this on the fly mid-scene. Add a `sheet.md` only when the character will actually be rolled against.
+
+For a recurring or story-bearing NPC — an ally, a rival, a faction head, a companion — build them with depth: real morals, goals, a wound, a voice of their own. **`Cast/CRAFTING-NPCS.md` is the guide.** Incidental faces stay a quick sketch; don't over-build a walk-on.
 
 **Two ways to voice a character:**
 
 - **Inline** *(default for minor/incidental characters)* — just speak as them from their `profile.md`. Fast and fluid.
-- **Via the `npc-actor` subagent** *(REQUIRED for secret-keepers, important recurring characters, or any moment where it must be true that the character doesn't know what you know)* — invoke `npc-actor` and pass it the text of that NPC's **`profile.md` and `memory.md`** (the character's own history with the party, so they don't greet an old ally like a stranger), plus the public scene context and what the Player just said. **Never** pass `secrets.md`, another character's files, `gm-secrets.md`, or a file path to any of them. The subagent has no file tools and runs in its own isolated context, so it *cannot* reach or leak what it was never handed — which inline voicing can't guarantee, since you (the GM) know everything.
+- **Via the `npc-actor` subagent** *(REQUIRED for secret-keepers, important recurring characters, or any moment where it must be true that the character doesn't know what you know)* — invoke `npc-actor` and pass it the text of that NPC's **`profile.md` and `memory.md`** (the character's own history with the party, so they don't greet an old ally like a stranger), plus the public scene context and what the Player just said. **Never** pass `secrets.md`, `sheet.md`, another character's files, `gm-secrets.md`, or a file path to any of them. The subagent has no file tools and runs in its own isolated context, so it *cannot* reach or leak what it was never handed — which inline voicing can't guarantee, since you (the GM) know everything.
 
 After a meaningful interaction, update that character's `memory.md`.
 
