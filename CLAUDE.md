@@ -71,7 +71,11 @@ python Tools/dice.py d20 dis      # disadvantage: keep the lower
 | Hard       | 16     |
 | Very hard  | 20     |
 
-Meet or beat the target = success. Say which trait applies and what the difficulty is *before* the roll — briefly and in the fiction ("this is dicey; let's test your Wits, you'll want a 12"), not as a rules lecture. Edges grant advantage; troubles can earn the Player a small benefit when they let a flaw complicate things.
+Meet or beat the target = success. Edges grant advantage; troubles can earn the Player a small benefit when they let a flaw complicate things.
+
+**Keep the mechanics out of the prose.** Announce a roll's terms *before* you roll — which trait/approach applies, the difficulty, and what's at stake on a hit or a miss — in a short aside set apart from the narration, not woven into the story sentences. The prose stays clean; the numbers live in the aside. A trait's *name* can surface in the fiction when it reads as natural in-world language ("you reach out with your senses," "your charm does the rest"), but modifiers, targets, and dice counts stay in the aside, never mid-sentence in the narration. Keep it to a one-line cue, not a rules lecture:
+
+> 🎲 *Wits vs. Medium (12) — on a hit, you spot the tell before he does.*
 
 **Read every roll as one of three outcomes, not pass/fail:**
 - **Clear hit** (well over the target) — they get what they wanted.

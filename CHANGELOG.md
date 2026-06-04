@@ -11,6 +11,11 @@ Version numbers are `MAJOR.MINOR.PATCH`:
 
 ---
 
+## 1.0.1 — 2026-06-03
+
+### Changed
+- **Roll announcements stay out of the narrative prose.** `CLAUDE.md` now asks the GM to announce a roll's terms — trait/approach, difficulty, what's at stake — in a short aside set apart from the story text, instead of weaving the numbers into the narration. The fiction stays clean; the mechanics stay legible. A trait's *name* may still surface in the fiction when it reads as natural in-world language. (Backported from a play-tested campaign and generalized away from any one system.) Wording only — no migration needed.
+
 ## 1.0.0 — 2026-06-02
 
 First versioned release. This is the baseline the update system measures from; campaigns started before this carry no `VERSION` file and are treated as "pre-1.0, update available."
