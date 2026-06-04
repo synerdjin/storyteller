@@ -25,7 +25,7 @@ What makes an important NPC feel like a person rather than a quest-dispenser:
 
 4. **A contradiction held in tension.** Real people aren't consistent. The tender enforcer. The coward who shows up anyway. The devout liar. One genuine contradiction does more for believability than a page of backstory — and it gives you two honest ways to play any scene.
 
-5. **Agency off-screen.** Important NPCs *want things and pursue them when the Player isn't watching.* They are not set dressing waiting to be talked to. Give each one a goal they're actively advancing — ideally on a progress clock in `Game/gm-secrets.md` — so the world feels like it has other protagonists, and so the Player's neglect has consequences.
+5. **Agency off-screen.** Important NPCs *want things and pursue them when the Player isn't watching.* They are not set dressing waiting to be talked to. Give each one a goal they're actively advancing — ideally on a progress clock in `Game/gm-secrets.md` — so the world feels like it has other protagonists, and so the Player's neglect has consequences. For the few who should genuinely *act* between scenes, promote them to a **living** agent: copy `Cast/_template/drives.md` into their folder and let the world tick advance their agenda fairly and automatically (see `CLAUDE.md` → "The living world"). Reserve this for the characters the story leans on — a living roster of three pressing rivals beats a dozen idling ones.
 
 6. **A voice you could pick out blind.** Cadence, vocabulary, sentence length, and — most telling — *what they won't say*. If you covered the name tags, the Player should still know who's speaking. This is what `profile.md`'s Voice section is for; make it specific. "Gruff" is not a voice.
 

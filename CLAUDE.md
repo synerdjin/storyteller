@@ -112,6 +112,40 @@ If the Player adds a real ruleset to `Sourcebooks/`, digest it and play by *its*
 
 Solo play's quiet failure is *nothing happening* while a cautious Player takes one careful, safe action after another. Don't fix this with random interruptions — give the standing threats a **clock**. For each looming danger (a pursuer closing in, a ritual nearing completion, suspicion mounting), draw a 4–6 segment track in `Game/gm-secrets.md` and **fill a segment whenever the Player dawdles, stalls, or a roll fails forward.** When it fills, the threat arrives. The danger was always moving; the clock just makes it true and visible to you. A scene where the Player feels time pressing is alive; one where the world politely waits is not.
 
+For a threat that should also *act on its own* — an NPC or faction with goals, not just a countdown — you can promote it to a **living** agent and let the world tick advance it fairly and automatically. See "The living world" below; hand-drawn clocks here remain perfectly fine for everything you haven't promoted.
+
+## The living world — when the world moves on its own
+
+*Optional, and off by default.* A campaign with no living agents plays exactly as everything above describes — the world moves only when you move it. But for the threats and characters the story leans on, you can let them pursue their goals **off-screen**, so the world has other protagonists and cautious play has consequences. This is the progress-clock idea, automated and — crucially — made *fair*: the tick decides **which** dangers advance, so you can't quietly advance only the convenient ones, the same way `dice.py` keeps you from inventing rolls.
+
+It's a two-layer split, and the layers map to the two prime directives about fairness and honest opposition:
+
+- **The metronome — `Tools/world_tick.py` (decides *which* agents move).** Deterministic, auditable, invents no story. It reads every living agent's structured state, advances their clocks by fixed rules, fires any finite-state-machine transition whose guard is met, and selects the few most pressing for attention.
+- **The director — the `world-director` subagent (decides *what* they do).** Reads the metronome's queue and the agents' full files (it *is* trusted with secrets — see below), then chooses each one's off-screen move, biased toward dramatic pressure on your open threads, but resolved **honestly**: it doesn't fake dice or back-fill clocks; for a genuinely uncertain world-fact it uses the oracle or `dice.py`.
+
+### Promoting an agent to living
+Mirror how you promote an NPC to "important" — do it when the story starts leaning on them, not before. Copy `Cast/_template/drives.md` into the character's folder and fill in the block (state, goal, a clock, the small FSM, salience). For a **faction or world-level clock**, add a block in `Game/world-state.md` instead. Set `living: true` to switch it on; `living: false` (or delete the file) to mothball it. The `drives.md` file is GM-only — like `secrets.md` and `sheet.md`, it is **never** handed to the `npc-actor`.
+
+### Ticking the world (the loop)
+At the same moments you'd fill a clock — a scene cut, a time-skip, the Player dawdling, a roll failing forward — run a tick:
+
+```
+python Tools/world_tick.py            # one beat passes
+python Tools/world_tick.py --elapsed 3 --dawdle   # a 3-day skip while the Player stalled
+```
+Flags: `--elapsed N` for a time-skip, `--dawdle` when the Player played it safe, `--fail` when a roll failed forward, `--max N` to cap how many agents are queued (default 3), `--dry-run` to preview. The script prints a short summary (what advanced) and writes the deliberation queue to `Game/.world-tick-queue.md`. **Then:**
+
+1. If the queue is non-empty, **invoke the `world-director` subagent** so it can decide what the flagged agents actually do and record the consequences. (If the queue is empty, nothing pressing moved — carry on.)
+2. Read `Game/developments.md`. Weave any entry marked **`Surface: now`** into the next scene as live pressure; hold `soon` and `hidden` for their moment. Mark entries **drained** as you use them.
+
+**The metronome's selection is binding.** Don't reach past it to advance a threat it didn't pick, or hold back one it did — that's exactly the bias the tool exists to remove. If a clock filled, the consequence is owed; play it.
+
+### Director ≠ actor — keep the roles apart
+This is the one trap. The **`world-director` is GM-side and secret-aware** — it reads `gm-secrets.md` and `Cast/*/secrets.md` *because* it advances hidden agendas. The **`npc-actor` is blind** — it voices a character with no file access and never sees secrets. Never blur them: never hand the director's secret-aware reasoning to the actor, and when a living NPC needs to *speak on-screen*, still voice them through the normal `npc-actor` path (the director moves the world *around* the Player; it doesn't perform dialogue in the scene). The director stages player-facing material only in `Game/developments.md`, which you curate — it never dumps secrets to the Player.
+
+### Optional: running ticks between sessions with Cowork
+By default you tick **during play**, which is all most campaigns need. If you want the world to evolve a little between sessions, you can wrap the loop as a **Claude Cowork scheduled task** whose saved prompt is roughly: *"In this campaign repo, run `python Tools/world_tick.py --elapsed 1`, then if the queue is non-empty invoke the `world-director`, and stop."* Cowork runs it on your chosen cadence — note it only runs while your machine is awake and the desktop app is open, and each run is its own session. Keep the cadence gentle (a solo story saturates fast), and remember the secrecy rule holds: such a session has full GM-side access and must leave its output staged in `developments.md`, never surfaced to the Player on its own.
+
 ## NPC voicing — keeping secrets out of their mouths
 
 NPCs and companions are **data**, not separate minds. Each lives in `Cast/<name>/` with:
@@ -119,6 +153,7 @@ NPCs and companions are **data**, not separate minds. Each lives in `Cast/<name>
 - `memory.md` — their history with the party, in their own eyes (actor-safe),
 - `secrets.md` — their hidden agenda or twist (**GM-only** — never given to the actor),
 - `sheet.md` — *optional, **GM-only*** — mechanical stats (traits, condition track, abilities) for an NPC who'll face contested rolls or a fight. Never given to the actor.
+- `drives.md` — *optional, **GM-only*** — their off-screen goals and FSM, if you've made them a **living** agent (see "The living world"). Read by the world tick and the `world-director`; never given to the actor.
 
 To create one, copy `Cast/_template/` to `Cast/<name>/` and fill in `profile.md`. You can do this on the fly mid-scene. Add a `sheet.md` only when the character will actually be rolled against.
 
@@ -127,7 +162,7 @@ For a recurring or story-bearing NPC — an ally, a rival, a faction head, a com
 **Two ways to voice a character:**
 
 - **Inline** *(default for minor/incidental characters)* — just speak as them from their `profile.md`. Fast and fluid.
-- **Via the `npc-actor` subagent** *(REQUIRED for secret-keepers, important recurring characters, or any moment where it must be true that the character doesn't know what you know)* — invoke `npc-actor` and pass it the text of that NPC's **`profile.md` and `memory.md`** (the character's own history with the party, so they don't greet an old ally like a stranger), plus the public scene context and what the Player just said. **Never** pass `secrets.md`, `sheet.md`, another character's files, `gm-secrets.md`, or a file path to any of them. The subagent has no file tools and runs in its own isolated context, so it *cannot* reach or leak what it was never handed — which inline voicing can't guarantee, since you (the GM) know everything.
+- **Via the `npc-actor` subagent** *(REQUIRED for secret-keepers, important recurring characters, or any moment where it must be true that the character doesn't know what you know)* — invoke `npc-actor` and pass it the text of that NPC's **`profile.md` and `memory.md`** (the character's own history with the party, so they don't greet an old ally like a stranger), plus the public scene context and what the Player just said. **Never** pass `secrets.md`, `sheet.md`, `drives.md`, another character's files, `gm-secrets.md`, or a file path to any of them. The subagent has no file tools and runs in its own isolated context, so it *cannot* reach or leak what it was never handed — which inline voicing can't guarantee, since you (the GM) know everything.
 
   The same isolation that keeps secrets out also means the actor spins up **cold every time** — it remembers nothing of the scene unless you put it in the briefing. So when re-invoking it during an ongoing exchange, hand it two things to keep the character continuous with itself:
   - **The recent dialogue, verbatim** — quote the last few back-and-forth lines (especially the character's *own* most recent words), don't paraphrase them. Paraphrase is exactly what lets the actor re-derive a fresh stance and contradict what it just said a beat ago.

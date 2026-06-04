@@ -6,3 +6,6 @@ Thumbs.db
 # Python
 __pycache__/
 *.pyc
+
+# Living-world tick: ephemeral hand-off from the metronome to the world-director
+Game/.world-tick-queue.md
