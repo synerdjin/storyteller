@@ -2,6 +2,7 @@
 name: npc-actor
 description: Voices a single NPC or companion strictly in character. The Game Master invokes this when it must be true that the character doesn't know what the GM knows — secret-keepers, important recurring characters, or any scene needing an honest, uninformed perspective. The GM passes ONLY that character's public profile and their memory of the party plus the current scene; this agent replies as that one character and nothing else.
 model: sonnet
+effort: high
 # No tools by design: with zero file access this agent *cannot* reach secrets.md
 # or gm-secrets.md even in principle — the isolation is structural, not a promise.
 # Everything the character knows arrives in the prompt.

@@ -11,6 +11,11 @@ Version numbers are `MAJOR.MINOR.PATCH`:
 
 ---
 
+## 1.0.2 — 2026-06-03
+
+### Changed
+- **`npc-actor` now runs at high reasoning effort** (`effort: high` in its frontmatter). The character-voicing role still runs on Sonnet, but with more deliberation per reply — richer, more in-character performances, at a little more latency/cost. Tuning only; no migration needed.
+
 ## 1.0.1 — 2026-06-03
 
 ### Changed
