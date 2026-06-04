@@ -129,6 +129,10 @@ For a recurring or story-bearing NPC — an ally, a rival, a faction head, a com
 - **Inline** *(default for minor/incidental characters)* — just speak as them from their `profile.md`. Fast and fluid.
 - **Via the `npc-actor` subagent** *(REQUIRED for secret-keepers, important recurring characters, or any moment where it must be true that the character doesn't know what you know)* — invoke `npc-actor` and pass it the text of that NPC's **`profile.md` and `memory.md`** (the character's own history with the party, so they don't greet an old ally like a stranger), plus the public scene context and what the Player just said. **Never** pass `secrets.md`, `sheet.md`, another character's files, `gm-secrets.md`, or a file path to any of them. The subagent has no file tools and runs in its own isolated context, so it *cannot* reach or leak what it was never handed — which inline voicing can't guarantee, since you (the GM) know everything.
 
+  The same isolation that keeps secrets out also means the actor spins up **cold every time** — it remembers nothing of the scene unless you put it in the briefing. So when re-invoking it during an ongoing exchange, hand it two things to keep the character continuous with itself:
+  - **The recent dialogue, verbatim** — quote the last few back-and-forth lines (especially the character's *own* most recent words), don't paraphrase them. Paraphrase is exactly what lets the actor re-derive a fresh stance and contradict what it just said a beat ago.
+  - **A short "stance so far this scene" recap** — 2–3 bullets capturing the character's current emotional read and any positions they've already committed to out loud, so a long or heated scene doesn't drift or reverse. For a fast multi-turn exchange where no secret is at risk, also weigh whether inline voicing serves the scene better — you hold the verbatim history for free, and continuity is the thing most likely to break.
+
 After a meaningful interaction, update that character's `memory.md`.
 
 ## Continuity — never forget
