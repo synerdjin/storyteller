@@ -11,7 +11,7 @@ The engine sorts every file into three buckets. An update **only ever overwrites
 | Bucket | What happens on update | Files |
 |---|---|---|
 | **Engine** — shipped by the template, never edited by play | **Overwritten** with the latest version | `CLAUDE.md`, `UPDATING.md`, `VERSION`, `CHANGELOG.md`, `LICENSE`, `README.md`, `.gitignore`, `.claude/agents/` (all agents), `Tools/dice.py`, `Tools/world_tick.py`, `Cast/README.md`, `Cast/CRAFTING-NPCS.md`, `Cast/_template/`, `Sourcebooks/README.md`, `Sourcebooks/_digests/.gitkeep`, `Character/README.md`, `Character/portraits/.gitkeep` |
-| **Your story (scaffolds)** — shipped empty, filled by play | **Never overwritten.** If a new version changes the *structure*, the GM splices it in interactively | `Game/boundaries.md`, `Game/campaign.md`, `Game/world.md`, `Game/timeline.md`, `Game/current-scene.md`, `Game/threads.md`, `Game/gm-secrets.md`, `Game/world-state.md`, `Game/developments.md` |
+| **Your story (scaffolds)** — shipped empty, filled by play | **Never overwritten.** If a new version changes the *structure*, the GM splices it in interactively | `PLAYER-NOTES.md`, `Game/boundaries.md`, `Game/campaign.md`, `Game/world.md`, `Game/timeline.md`, `Game/current-scene.md`, `Game/threads.md`, `Game/gm-secrets.md`, `Game/world-state.md`, `Game/developments.md` |
 | **Your story + your config** — never part of the engine | **Never touched** | `.claude/settings.json` (your model choices), `Character/sheet.md`, `Character/backstory.md`, your real portraits, every `Cast/<name>/` folder you've created, the rulebooks and digests in `Sourcebooks/` |
 
 > **One caveat for tinkerers:** if you've hand-edited an *Engine* file (say, tweaked `CLAUDE.md` or `dice.py`), an update **replaces** your version with the latest. Commit your edits first so they're in your history, then re-apply them after — or contribute them back to the engine.
@@ -46,7 +46,7 @@ git checkout engine/main -- CLAUDE.md UPDATING.md VERSION CHANGELOG.md LICENSE R
 ```
 This overwrites only the named paths. Your `Game/*.md`, `Cast/<name>/`, `Character/sheet.md`, `.claude/settings.json`, and `Sourcebooks/` content are not named, so they don't move. (If the CHANGELOG says a file was **removed** in this release, delete your local copy by hand.)
 
-**5. Migrate your filled-in scaffolds — only if the CHANGELOG flags it.** For each `Game/*.md` with a **Campaign migration** note, the GM compares the new structure (`git show engine/main:Game/<file>`) against your filled file, shows you exactly what's new, and — with your OK — splices in the new section **without deleting anything you wrote.** Never blind-overwrite these; that's your story.
+**5. Migrate your filled-in scaffolds — only if the CHANGELOG flags it.** For each scaffold file with a **Campaign migration** note (the `Game/*.md` files, or `PLAYER-NOTES.md` at the root), the GM compares the new structure (`git show engine/main:<path>`) against your filled file, shows you exactly what's new, and — with your OK — splices in the new section **without deleting anything you wrote.** Never blind-overwrite these; that's your story.
 
 **6. Leave your config and save data alone.** Don't overwrite `.claude/settings.json` or anything in the third bucket. If a CHANGELOG entry mentions a changed *default* (e.g. a model), surface it and let the Player decide.
 

@@ -28,6 +28,9 @@ The starting region: a handful of evocative locations, who's around, the state o
 ### `Game/current-scene.md`
 The very first scene: where the character is, what's happening, and the immediate situation that demands a choice. End on a hook that begs "what do you do?" Open "Where & when" with the campaign-clock stamp — this is **Day 1** — using the start date from the Calendar note, e.g. `**Day 1 — 3rd of Frostmoon, dusk.** <place>`.
 
+### `PLAYER-NOTES.md` (repo root) — the Player's spoiler-free dashboard
+Seed the opening entry so the Player starts with a notebook, not a blank page. Fill **"The situation, in one breath"** from the opening scene, and lightly stock **"What you firmly KNOW,"** **"What you WANT to know — open questions,"** and **"Your people"** with only what the character would actually know at the start. Write it in the campaign's narrative voice. **This file is for the Player to read — put NO secrets in it** (nothing from `gm-secrets.md`, no twists). Leave the structure and the "Your own notes" section intact. Stamp it *Day 1.*
+
 ### `Game/gm-secrets.md`  — **GM ONLY**
 The truth behind the curtain: what's *really* going on, who's secretly who, what the factions hide, and 2–3 planned reveals with rough conditions for when they might surface. Write the secrets that make the open threads pay off. This file is for the GM's eyes only — it must never be quoted to the Player or fed to any NPC actor.
 

@@ -43,6 +43,7 @@ To continue later, open the project and say **"Let's keep playing."** The GM pic
 | `Cast/` | Every NPC and companion the GM voices, one folder each. |
 | `Sourcebooks/` | Drop rulebooks and lore here for the GM to use. |
 | `Tools/` | The dice roller. |
+| `PLAYER-NOTES.md` | Your spoiler-free notebook — what you know, want, and are chasing. The GM keeps it current; you can park your own notes there too. |
 | `CLAUDE.md` | The GM's instructions (how it runs the game). |
 
 ## A note on spoilers
