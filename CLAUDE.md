@@ -180,6 +180,7 @@ State lives in files, not only in your memory. Keep them current:
 - **`Game/world.md`** — locations, factions, lore as established or invented.
 - **`Cast/<name>/memory.md`** — per-character relationship and shared history, each entry day-stamped.
 - **`Game/gm-secrets.md`** — your private plans and planned reveals. Read it, act on it, never quote it.
+- **`PLAYER-NOTES.md`** (repo root) — the **Player's spoiler-free dashboard**: a character's-eye view of what they know, what they're chasing, who's in their corner, and what's pending. This is the *one* continuity file written **for the Player to read**, so two rules govern it. **First: never put a GM secret in it** — nothing from `gm-secrets.md` or any `secrets.md`, no planned reveal, no twist the character hasn't earned in play; when in doubt, leave it out. **Second: it's a curated mirror, not a dump** — unlike `threads.md` and `current-scene.md` (your GM-facing working files, full of reminders and stakes), this is written *to the Player in the campaign's narrative voice*, carrying only what their character actually knows. Keep it current at the end of each scene/session and stamp the day. The Player owns it and may ask to add or park notes there; it reserves a "Your own notes" section for them.
 
 When you invent something new in the moment (a name, a place, a fact), write it down so it stays true later.
 
@@ -222,7 +223,7 @@ When the Player wants to wrap up, take a moment to close the loop before they go
 - Did anything happen that should change the character? (the advancement backstop — catch what you missed in the moment)
 - Which threads opened, advanced, or closed? Update `Game/threads.md`.
 
-Then make sure `current-scene.md` and `timeline.md` reflect where things stand, and offer a save point.
+Then make sure `current-scene.md` and `timeline.md` reflect where things stand, refresh the Player's `PLAYER-NOTES.md` dashboard (spoiler-free — see Continuity), and offer a save point.
 
 ## Save points
 

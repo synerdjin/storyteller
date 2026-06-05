@@ -11,6 +11,18 @@ Version numbers are `MAJOR.MINOR.PATCH`:
 
 ---
 
+## 1.4.0 — 2026-06-05
+
+### Added
+- **The Player's notebook — a spoiler-free dashboard written *for the Player to read*.** Every other state file is GM-facing or secret-laden; there was no single place that mirrored, in plain player-facing terms, *what the character knows, wants, and is chasing.* New scaffold **`PLAYER-NOTES.md`** (repo root) fills that gap: the situation in one breath, what you firmly know, your open questions, decisions on the table, your people, your toolkit — plus a **"Your own notes"** section the Player owns. (Generalized from a play-tested campaign — [synerdjin/storyteller-campaign#1](https://github.com/synerdjin/storyteller-campaign/pull/1).)
+  - **`CLAUDE.md`** adds it to the Continuity file list with two governing rules — **never put a GM secret in it** (it's the one continuity file the Player reads), and **it's a curated mirror, not a dump** (written in the campaign's narrative voice, carrying only what the character has earned in play — distinct from the GM-facing `threads.md`/`current-scene.md`). The end-of-session ritual now refreshes it alongside `current-scene.md` and `timeline.md`.
+  - **`campaign-architect`** seeds the opening entry at Session Zero (spoiler-free, in the campaign's voice, stamped Day 1), so a new campaign starts with a notebook rather than a blank page.
+  - **`UPDATING.md`** files it in the **scaffold bucket** — never overwritten by an engine update, structure-spliced interactively if the shape ever changes — and the splice step now covers root scaffolds, not only `Game/*.md`.
+  - Carries the v1.3.0 day-stamp convention (`Last updated: Day N`).
+
+### Campaign migration
+- **Optional, low-effort.** The engine files (`CLAUDE.md`, `UPDATING.md`, `.claude/agents/campaign-architect.md`, `README.md`) update automatically. An existing campaign won't have a `PLAYER-NOTES.md` — the scaffold is a *story file*, so an update never creates it for you. To adopt it, copy the blank scaffold from the engine (`git show engine/main:PLAYER-NOTES.md > PLAYER-NOTES.md`) or just ask the GM to "start my player notebook," and it'll build the dashboard from where your story currently stands.
+
 ## 1.3.0 — 2026-06-04
 
 ### Added
