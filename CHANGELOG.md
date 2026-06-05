@@ -11,6 +11,18 @@ Version numbers are `MAJOR.MINOR.PATCH`:
 
 ---
 
+## 1.5.0 — 2026-06-05
+
+### Added
+- **Triggered-milestone XP — advancement you can see accrue.** The engine had only *invisible* growth: the GM eyeballed when a character had earned a change and nudged the sheet by feel, with nothing the Player could watch and no guard against GM-to-GM drift. There was no XP, no levels, and deliberately nothing tied to time or post count (per-session XP rewards exactly the cautious dawdling the engine is built to discourage). Now there's a lightweight default that keeps the fiction-first spirit while making progress **visible and auditable** — the `dice.py` "be seen to be fair" principle applied to growth.
+  - **`CLAUDE.md`'s "Growth" section is rewritten** around a default **triggered-milestone XP** system, logged in a new `## Advancement` section of `Character/sheet.md`. XP is awarded **at scene/session close** for earned story beats (overcoming danger, resolving threads, discoveries, leaning into a Trouble, forging bonds) — **never** for time played or messages sent — and spent against a default cost table expressed in the sheet's own vocabulary (nudge a trait, gain an edge, retire a trouble, forge a bond). Every award is **day-stamped and logged in the Player's view**.
+  - **The sourcebook override is mandatory, not optional, and settled at the start.** If a ruleset in `Sourcebooks/` defines its own XP, levels, or advancement, **its rules replace the entire default** — established at Session Zero (or when the sourcebook is added), exactly the way a sourcebook replaces the default resolution mechanic. The engine XP system is never layered on top of a book's own progression. The Sourcebooks digest "Overrides" checklist now lists advancement/XP alongside resolution, condition track, and oracle.
+  - **The "Ending a session" ritual now tallies XP** — logging the session's milestones to the ledger and telling the Player what they earned and what it can buy.
+  - **`character-creator`** seeds a zeroed `## Advancement` ledger on every new sheet (or builds a sourcebook's own progression structure instead), so a character starts with a dashboard rather than a blank. `Character/README.md` points to it.
+
+### Campaign migration
+- **Optional, low-effort.** The engine files (`CLAUDE.md`, `.claude/agents/character-creator.md`, `Character/README.md`) update automatically, so the XP discipline takes effect immediately. Your existing `Character/sheet.md` is **your save data and is never overwritten** — to adopt the ledger, just ask the GM to "start my XP ledger," and it'll add a zeroed `## Advancement` section (or back-fill a starting balance from your `timeline.md` if you'd rather). **If your campaign already runs on a `Sourcebooks/` ruleset with its own advancement, do nothing** — that book's rules already win by default.
+
 ## 1.4.0 — 2026-06-05
 
 ### Added

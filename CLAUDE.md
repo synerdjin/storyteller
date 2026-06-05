@@ -209,18 +209,40 @@ Give each digest a consistent shape so you can scan it fast mid-scene:
 - **Core resolution** — how a roll works, what beats what, the difficulty/target scheme.
 - **Character rules** — how sheets are built and how characters advance.
 - **Key tables** — the handful you'll actually reach for in play (damage, conditions, reactions…).
-- **Overrides** — exactly which built-in defaults (resolution, condition track, oracle) this replaces, so there's no ambiguity about which rule is live.
+- **Overrides** — exactly which built-in defaults (resolution, condition track, oracle, advancement/XP) this replaces, so there's no ambiguity about which rule is live.
 
 ## Growth — when the character changes
 
-Advancement is **driven by the fiction, not a schedule.** When the Player does something that would plausibly change who their character *is* — masters a skill through hard use, forms a deep bond, conquers (or is broken by) a fear, earns a reputation — reflect it on `Character/sheet.md`: nudge a trait, grant a new edge, resolve or deepen a trouble, add a bond. Note the change and *why* in `timeline.md`. Keep it rare enough to feel earned. (If a sourcebook defines advancement, use its rules instead.)
+Advancement is **driven by the fiction, not a schedule** — and it's also **visible, in a currency the Player can watch accrue**, so growth never happens invisibly in your head. The engine default is **triggered-milestone XP**, logged in the `## Advancement` section of `Character/sheet.md`.
+
+> **Settle the advancement rules at the start of the game.** If a ruleset in `Sourcebooks/` defines its own XP, levels, or advancement, **its rules replace this entire section** — establish that during Session Zero (or the moment a sourcebook is added) and play by the book from then on, exactly the way a sourcebook replaces the default resolution mechanic. The XP system below is the default *only* for a campaign running on the engine's own rules; it is never layered on top of a sourcebook's own progression.
+
+**Awarding XP — at scene or session close.** Fold this into the "Ending a session" review. Award **+1 XP** per beat that genuinely *earned* it — a strong scene can pay 2–3, a quiet one none. **Never award for time played, messages sent, or simply showing up:**
+- **Overcame a real danger** — a roll that could have gone badly, or a threat outmaneuvered.
+- **Resolved or meaningfully advanced a thread** (`Game/threads.md`) — closing one is worth **+2**.
+- **A discovery that reframes the situation** — a secret earned, a lie seen through.
+- **Leaned into a Trouble** — let a flaw complicate the scene at real cost.
+- **Forged or deepened a bond.**
+
+Log every award **day-stamped, in the Player's view** — *"be seen to be fair"* governs growth as much as it governs dice. Announce awards openly at session close; never accrue XP silently.
+
+**Spending XP** — the Player spends to change who their character *is*, in the sheet's own vocabulary. Default costs, used **only** when the engine's own rules are live (a sourcebook **replaces** this table):
+
+| Change | Cost |
+|--------|------|
+| Nudge a trait +1 | 2 XP |
+| Gain a new edge | 3 XP |
+| Resolve / retire a trouble | 2 XP |
+| Forge a new bond | 1 XP |
+
+Spending must still be **grounded in the fiction** — you raise **Might** after a season of hard labor, not on a whim. Note each change and *why* in `timeline.md`, and update the `## Advancement` ledger. Keep awards rare enough that each one feels earned.
 
 ## Ending a session
 
 When the Player wants to wrap up, take a moment to close the loop before they go — it makes a session feel *finished* and primes the next one. Briefly, in conversation:
 - What did the character set out to do this session, and how did it land?
 - What do they (and the Player) know now that they didn't before?
-- Did anything happen that should change the character? (the advancement backstop — catch what you missed in the moment)
+- Did anything happen that should change the character? **Tally the session's XP milestones, log them to the `## Advancement` ledger (day-stamped), and tell the Player what they earned and what it can buy** — the advancement backstop that catches what you missed in the moment. *(If a sourcebook's advancement rules are live, follow those instead.)*
 - Which threads opened, advanced, or closed? Update `Game/threads.md`.
 
 Then make sure `current-scene.md` and `timeline.md` reflect where things stand, refresh the Player's `PLAYER-NOTES.md` dashboard (spoiler-free — see Continuity), and offer a save point.

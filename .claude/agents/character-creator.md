@@ -26,6 +26,15 @@ A *living* character sheet. With the default (system-agnostic) ruleset, structur
 - **Bonds** — people, places, or causes they care about (these become plot hooks).
 - **Gear / signature items.**
 - **Condition track** — simple, e.g. Fine → Hurt → Badly hurt → Out, rather than fiddly hit points, unless a sourcebook says otherwise.
+- **Advancement (XP)** — a visible XP ledger the character grows through (see CLAUDE.md "Growth"). Seed it at zero so the Player starts with a dashboard, not a blank:
+  ```
+  ## Advancement
+  **XP: 0 available · 0 earned lifetime**
+
+  ### Ledger
+  _(XP is awarded at scene/session close and spent to change the sheet — see CLAUDE.md "Growth.")_
+  ```
+  If a sourcebook defines its own XP, levels, or advancement, build **its** progression structure here instead.
 
 If a sourcebook digest exists, follow **its** sheet format instead of the above.
 
