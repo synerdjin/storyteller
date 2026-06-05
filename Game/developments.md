@@ -12,7 +12,7 @@
 
 ### Entry format (for the director)
 ```
-## <date / in-fiction time> — <agent>: <one-line headline>
+## [Day N — in-world date] — <agent>: <one-line headline>
 - What happened (off-screen).
 - Surface: now | soon (trigger: ...) | hidden
 - Drained: no
