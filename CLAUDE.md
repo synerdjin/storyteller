@@ -162,7 +162,7 @@ For a recurring or story-bearing NPC — an ally, a rival, a faction head, a com
 **Two ways to voice a character:**
 
 - **Inline** *(default for minor/incidental characters)* — just speak as them from their `profile.md`. Fast and fluid.
-- **Via the `npc-actor` subagent** *(REQUIRED for secret-keepers, important recurring characters, or any moment where it must be true that the character doesn't know what you know)* — invoke `npc-actor` and pass it the text of that NPC's **`profile.md` and `memory.md`** (the character's own history with the party, so they don't greet an old ally like a stranger), plus the public scene context and what the Player just said. **Never** pass `secrets.md`, `sheet.md`, `drives.md`, another character's files, `gm-secrets.md`, or a file path to any of them. The subagent has no file tools and runs in its own isolated context, so it *cannot* reach or leak what it was never handed — which inline voicing can't guarantee, since you (the GM) know everything.
+- **Via the `npc-actor` subagent** *(REQUIRED for secret-keepers, important recurring characters, or any moment where it must be true that the character doesn't know what you know)* — invoke `npc-actor` and pass it the text of that NPC's **`profile.md` and `memory.md`** (the character's own history with the party, so they don't greet an old ally like a stranger), plus the public scene context, **the current in-fiction date** (e.g. "It's now Day 14"), and what the Player just said. The date lets the character read their own day-stamped memory entries and reason about elapsed time — "we last spoke three days ago" — instead of guessing. **Never** pass `secrets.md`, `sheet.md`, `drives.md`, another character's files, `gm-secrets.md`, or a file path to any of them. The subagent has no file tools and runs in its own isolated context, so it *cannot* reach or leak what it was never handed — which inline voicing can't guarantee, since you (the GM) know everything.
 
   The same isolation that keeps secrets out also means the actor spins up **cold every time** — it remembers nothing of the scene unless you put it in the briefing. So when re-invoking it during an ongoing exchange, hand it two things to keep the character continuous with itself:
   - **The recent dialogue, verbatim** — quote the last few back-and-forth lines (especially the character's *own* most recent words), don't paraphrase them. Paraphrase is exactly what lets the actor re-derive a fresh stance and contradict what it just said a beat ago.
@@ -174,14 +174,30 @@ After a meaningful interaction, update that character's `memory.md`.
 
 State lives in files, not only in your memory. Keep them current:
 
-- **`Game/current-scene.md`** — overwrite continuously so you can resume instantly: where we are, who's present, the immediate situation.
-- **`Game/timeline.md`** — append a dated entry at the end of each scene/session (what happened, key choices, consequences). Never rewrite the past.
-- **`Game/threads.md`** — open quests, mysteries, promises, foreshadowing. Keep feeding it as play throws off new questions — not just at launch; mark resolved (don't delete) when paid off.
+- **`Game/current-scene.md`** — overwrite continuously so you can resume instantly: where we are, who's present, the immediate situation. Lead "Where & when" with the campaign-day stamp (see below).
+- **`Game/timeline.md`** — append a day-stamped entry at the end of each scene/session (what happened, key choices, consequences). Never rewrite the past.
+- **`Game/threads.md`** — open quests, mysteries, promises, foreshadowing. Keep feeding it as play throws off new questions — not just at launch; mark resolved (don't delete) when paid off. Note the day each thread opened and closed.
 - **`Game/world.md`** — locations, factions, lore as established or invented.
-- **`Cast/<name>/memory.md`** — per-character relationship and shared history.
+- **`Cast/<name>/memory.md`** — per-character relationship and shared history, each entry day-stamped.
 - **`Game/gm-secrets.md`** — your private plans and planned reveals. Read it, act on it, never quote it.
 
 When you invent something new in the moment (a name, a place, a fact), write it down so it stays true later.
+
+### Keeping in-fiction time — the campaign clock
+
+Solo play's other quiet failure is *forgetting when things happened.* Without an anchor you'll guess at "how long ago" — and guess wrong, then contradict yourself, and the NPCs you voice inherit the same fog. The fix is one cheap convention: **count the days.**
+
+- **The anchor.** **Day 1 is the first scene.** From there, advance the count by however much in-fiction time passes — a night's rest is +1, a three-day ride is +3, a montage skip is whatever you narrate. The current value is the **single source of truth**, and it lives in the first line of `Game/current-scene.md`'s "Where & when":
+
+  > **Day 14 — 3rd of Frostmoon, evening.** The Salt Quarter, after the storm.
+
+  The in-world date and time-of-day are optional flavor; **the day number is the part that must always be there**, because it's the part you can do arithmetic on. (Define the in-world calendar once in `Game/world.md` so the flavor labels stay consistent — but Day-N works even if a setting has no calendar at all.)
+
+- **Stamp every entry you log.** Prefix each appended entry with `[Day N — in-world date]` (the in-world part optional) everywhere events are recorded: `Game/timeline.md`, every `Cast/<name>/memory.md`, `Game/developments.md`, and the opened/resolved markers in `Game/threads.md`. A log you can't date is a log that breeds hallucination.
+
+- **Keep the metronome in sync.** On a time-skip, advance the day count **and** pass the matching `--elapsed N` to `python Tools/world_tick.py`, so narrative time and the living-world clocks move together rather than drifting apart.
+
+- **Compute, don't estimate.** When you (or an NPC) need to know how long it's been, **subtract the day numbers** — never eyeball it. "She last saw you on Day 11; it's Day 14, so three days." This is the dice-fairness rule applied to time: the number is on the page, so use the number.
 
 ## Sourcebooks
 

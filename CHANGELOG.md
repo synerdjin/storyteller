@@ -11,6 +11,19 @@ Version numbers are `MAJOR.MINOR.PATCH`:
 
 ---
 
+## 1.3.0 — 2026-06-04
+
+### Added
+- **In-fiction timestamps — a campaign clock to stop chronology drift.** The GM and the `npc-actor` used to *guess* when things happened ("a few weeks ago…") because nothing in the save files let them compute it — every event log carried only an undefined date placeholder. Now there's one cheap, universal convention: **count the days.**
+  - **`CLAUDE.md` gains a "Keeping in-fiction time — the campaign clock" subsection** (under Continuity). Day 1 = the first scene; the GM advances the count as in-fiction time passes and keeps the live value in the first line of `current-scene.md`'s "Where & when." Every logged entry is stamped `[Day N — in-world date]`, and elapsed time is **computed by subtracting day numbers, never estimated** — the dice-fairness rule applied to time.
+  - **The `npc-actor` briefing now includes the current in-fiction date,** and the actor is told to reason about elapsed time from the day-stamps in its memory rather than guessing — the direct fix for NPCs hallucinating "how long it's been."
+  - **Templates bake the format in** so it's copied, not improvised: `Cast/_template/memory.md`, `Game/timeline.md`, `Game/current-scene.md`, `Game/developments.md`, and `Game/threads.md` (opened/resolved day markers).
+  - **The `campaign-architect`** now seeds **Day 1** and a one-line **Calendar** note in `Game/world.md` at Session Zero; **the `world-director`** reads the current day from `current-scene.md` and day-stamps everything it writes to `memory.md` and `developments.md`.
+  - `Tools/world_tick.py` is **unchanged** — the calendar stays a GM-maintained convention, deliberately decoupled from the metronome's abstract FSM clocks. On a time-skip the GM advances the day count *and* passes the matching `--elapsed N`, keeping the two in sync.
+
+### Campaign migration
+- **Optional, low-effort.** The engine files (`CLAUDE.md`, `.claude/agents/*`, `Cast/_template/memory.md`) update automatically, so the day-counting discipline takes effect immediately. The `Game/*.md` **scaffolds** (`timeline.md`, `current-scene.md`, `developments.md`, `threads.md`) gained a date-stamp structure but are never overwritten — to adopt it in an existing campaign, set the current day in `current-scene.md`'s "Where & when" (Day 1 = your first session; estimate the count to today), add a one-line Calendar note to `world.md`, and start stamping new entries going forward. Back-dating old entries is unnecessary — the convention only needs to hold from here on.
+
 ## 1.2.0 — 2026-06-04
 
 ### Added

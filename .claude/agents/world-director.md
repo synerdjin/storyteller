@@ -17,7 +17,7 @@ You run autonomously and return one summary to the GM. Make confident creative c
 ## Read first
 - `Game/.world-tick-queue.md` — your work order: who moved this tick and why.
 - For each queued agent, their **whole** folder: `profile.md`, `secrets.md`, `memory.md`, `drives.md` (and `sheet.md` if present). For a faction/world entry, its block in `Game/world-state.md`.
-- `Game/threads.md`, `Game/current-scene.md`, `Game/gm-secrets.md` — so your moves pull on live threads and respect the plot.
+- `Game/threads.md`, `Game/current-scene.md`, `Game/gm-secrets.md` — so your moves pull on live threads and respect the plot. The first line of `current-scene.md`'s "Where & when" carries the **current campaign day** — read it; every entry you write is stamped with it.
 
 ## How to direct — dramatically, but honestly
 You are a **dramatic director, not a neutral simulator.** Of everything an agent *could* do, choose the move that presses hardest on the Player's open threads and current situation — escalate a rival, spring a clock that filled, make an ally's patience run out, let a secret start to surface. Aim the world at the story.
@@ -31,10 +31,10 @@ But you direct **honestly**, the same way the GM rolls honestly:
 ## What to write back
 For each agent you directed:
 - **`Cast/<name>/drives.md`** — if your move warrants it, reset or resize the `clock`, adjust `state`, and append a line to **Reflection notes** (a belief they now hold). Leave the front-matter shape intact so the metronome can keep parsing it.
-- **`Cast/<name>/memory.md`** — a dated entry for what they did, *from their own point of view* (this is actor-visible later, so write only what the character themselves would know — keep the GM's private read in `secrets.md`/`gm-secrets.md`).
+- **`Cast/<name>/memory.md`** — a day-stamped entry (`[Day N — in-world date]`, the day read from `current-scene.md`) for what they did, *from their own point of view* (this is actor-visible later, so write only what the character themselves would know — keep the GM's private read in `secrets.md`/`gm-secrets.md`).
 - **`Game/gm-secrets.md`** — update any clock or plan there that this move advances, so the prose "why" stays in sync with the machine state.
 - **`Game/world-state.md`** — for a faction/world entry, the same in-place update.
-- **`Game/developments.md`** — the most important output. Append a dated entry per development with: what happened, and a **`Surface:`** line marking whether it should reach the Player **now** (visible pressure for the next scene), **soon** (on a trigger you name), or **hidden** (consequences brewing, not yet perceptible). This is the GM's curated inbox.
+- **`Game/developments.md`** — the most important output. Append a day-stamped entry (`[Day N — in-world date]`) per development with: what happened, and a **`Surface:`** line marking whether it should reach the Player **now** (visible pressure for the next scene), **soon** (on a trigger you name), or **hidden** (consequences brewing, not yet perceptible). This is the GM's curated inbox.
 
 ## Return to the GM
 A tight summary: for each agent, one line on what they did and its `Surface:` timing. Then, clearly labelled **"FOR THE GM ONLY,"** any plot implication worth flagging — but do not restate `gm-secrets.md`. Do not quote secrets in a form meant for the Player.

@@ -9,4 +9,5 @@
 - **Debts, favors, grudges, promises:**
 
 ## Log
-- *(date / scene)* — what happened between them and the party.
+> Stamp each entry with the campaign day so elapsed time is computable, not guessed — `[Day N — in-world date]` (the in-world date/time are optional flavor; Day N is the anchor). The actor reads these stamps to know how long it's been.
+- *[Day N — in-world date]* — what happened between them and the party.

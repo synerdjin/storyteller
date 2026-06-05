@@ -20,13 +20,13 @@ You run autonomously and return a single result. Work from the briefing; make co
 The pitch: genre, tone, the central dramatic question, the major factions and what each *openly* wants, and recurring themes. Only what's true and knowable about the world — not the twists.
 
 ### `Game/world.md`
-The starting region: a handful of evocative locations, who's around, the state of things. Enough to begin; it grows in play.
+The starting region: a handful of evocative locations, who's around, the state of things. Enough to begin; it grows in play. Include a one-line **Calendar** note — the in-world dating scheme (month/season names if any) and the date the story opens on — so the day-stamps the GM writes stay consistent. Keep it light; a setting with no calendar can just rely on the day count.
 
 ### `Game/threads.md`
 3–5 threads to launch with: one pressing problem (the opening hook), a couple of slow-burn mysteries, and at least one thread wired directly to the character's backstory. Mark each as open.
 
 ### `Game/current-scene.md`
-The very first scene: where the character is, what's happening, and the immediate situation that demands a choice. End on a hook that begs "what do you do?"
+The very first scene: where the character is, what's happening, and the immediate situation that demands a choice. End on a hook that begs "what do you do?" Open "Where & when" with the campaign-clock stamp — this is **Day 1** — using the start date from the Calendar note, e.g. `**Day 1 — 3rd of Frostmoon, dusk.** <place>`.
 
 ### `Game/gm-secrets.md`  — **GM ONLY**
 The truth behind the curtain: what's *really* going on, who's secretly who, what the factions hide, and 2–3 planned reveals with rough conditions for when they might surface. Write the secrets that make the open threads pay off. This file is for the GM's eyes only — it must never be quoted to the Player or fed to any NPC actor.
