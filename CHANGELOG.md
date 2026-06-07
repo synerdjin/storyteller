@@ -11,6 +11,29 @@ Version numbers are `MAJOR.MINOR.PATCH`:
 
 ---
 
+## 2.0.0 — 2026-06-07
+
+### Changed — the engine is now a World of Darkness Storyteller
+The generic, system-agnostic engine is **specialized for the World of Darkness**, running three games on the classic **Storyteller System** (d10 success pools): **Mage: The Ascension 20th (M20)**, **Vampire: The Masquerade 20th (V20)**, and **Werewolf: The Apocalypse 20th (W20)**. The old d20-and-traits defaults are **replaced**, not layered. Rules content stays **scaffolding-only** — the engine ships a faithful, lightweight Storyteller floor and the Player drops their own (copyrighted) rulebooks into `Sourcebooks/` for the GM to digest; a digest then overrides the defaults as before.
+
+- **`CLAUDE.md`** is re-based on the Storyteller System:
+  - Resolution is now the **d10 dice pool** — pool = Attribute + Ability (+ splat trait), difficulty 3–9 (default 6), successes counted, **1s cancel**, **botch** on 1s with zero successes, specialties (10 = 2), Willpower = +1 automatic success. Net successes set the degree (marginal → phenomenal).
+  - The condition track is now **Health levels** (Bruised → Hurt → Injured → Wounded → Mauled → Crippled → Incapacitated) with bashing/lethal/aggravated damage and wound penalties.
+  - **Growth/XP** is reframed for WoD (raise Attributes/Abilities, buy Sphere/Discipline/Gift dots), with a deliberately simple default scaffold and the explicit rule that a live game's **digest costs override** it.
+  - New **"Which game are we playing?"** section anchored on a new state file (below); the intro, Session Zero order, and the resume checklist all now lead with it.
+- **New `Game/system.md`** — the single source of truth for the live game, edition, **crossover** splats, and which digests are in force. Read first every session; written at Session Zero.
+- **`Tools/dice.py`** — adds **`v20`/`vampire`** and **`w20`/`werewolf`** subcommands alongside the existing `m20`, all sharing the Storyteller resolver; `w20` adds a `-r/--rage` flag for Rage dice. Output now names the game (M20/V20/W20).
+- **Subagents:**
+  - **`character-creator`** builds a real Storyteller sheet — nine Attributes, Abilities (Talents/Skills/Knowledges), Backgrounds, Willpower, Health levels, Merits/Flaws — plus the **splat block** for the live game (Spheres/Arete/Paradox · Disciplines/Humanity/Beast · Gifts/Rage/Gnosis/Renown). Reads `Game/system.md` first; defers exact costs to a digest.
+  - **`campaign-architect`** hooks the chronicle into the character's **splat identity** and builds WoD factions (Camarilla/Sabbat/Anarch · Traditions/Technocracy · Garou Nation/Wyrm-Weaver-Wyld), with crossover guidance.
+  - **`world-director`** may resolve uncertain world-facts with a splat pool; WoD factions called out as ideal living agents.
+  - **`npc-actor`** unchanged (already system-agnostic).
+- **Templates & docs:** `Cast/_template/sheet.md` is now a Storyteller stat block (pools, Health levels, soak/aggravated, supernatural levers); `Sourcebooks/README.md` explains the bring-your-own-book WoD workflow; new `Sourcebooks/_digests/_TEMPLATE.md` digest skeleton; `README.md` reframed for the World of Darkness.
+
+### Campaign migration
+- **This is a MAJOR change: existing non-WoD campaigns should not blind-update.** A campaign already running on the old generic d20 defaults would have its rules pulled out from under it. If you want to keep a generic game, stay on `1.5.0`. To convert an existing game to a World of Darkness chronicle, update the engine files, then ask the GM to "set up `Game/system.md`" and re-stat your `Character/sheet.md` into the chosen splat — your story files (`Game/*.md`, `Cast/<name>/`, backstory, notebook) are untouched as always.
+- **New engine file `Game/system.md`** is a *scaffold* (your story), so an update won't create it for you — ask the GM to "set up the system file," or copy the blank from the engine.
+
 ## 1.5.0 — 2026-06-05
 
 ### Added

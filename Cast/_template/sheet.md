@@ -2,25 +2,27 @@
 
 > ⚠️ **Optional, and GM-only.** Never hand this file to the `npc-actor` — it's your tool for resolving rolls, not something the character knows about themselves. Only bother filling it in for an NPC who'll face **contested rolls or a fight**; an incidental face needs no sheet at all.
 >
-> Keep it as light as the character needs: a named bruiser needs three numbers, a recurring archvillain earns the full sheet. **Mirror the live system** — match the shape of `Character/sheet.md`, or whatever a `Sourcebooks/_digests/` ruleset defines. The fields below assume the engine default (d20 + trait vs. a target, condition track).
+> Keep it as light as the character needs: a named ghoul or fomori needs a few numbers, a recurring elder earns the full block. **Mirror the live game** — match the shape of `Character/sheet.md` for the game in `Game/system.md`, or whatever a `Sourcebooks/_digests/` ruleset defines. The fields below assume the Storyteller default (d10 pools vs. a difficulty, Health levels).
 
 ## At a glance
 - **Competence tier:** mook (folds fast) / capable (a real obstacle) / elite (a match for the Player or better)
+- **Splat & key trait:** *(e.g. Brujah elder · Black Spiral Dancer · Technocracy field agent)*
 - **What they're dangerous at, in a line:**
 
-## Traits / approach modifiers
-- The handful of modifiers you'd actually roll or set a difficulty from. List only what matters.
-  - *e.g.* Might +2 · Wits +3 · Guile +1
+## Pools & difficulties
+- The handful of dice pools you'd actually roll, and the difficulties you'd set against the Player. List only what matters.
+  - *e.g.* Brawl pool **7** · Intimidation pool **6** · soak **5** · resist diff **7**
+- Note the few **Attributes/Abilities** (dots) that drive those pools if you want to roll them out.
 
-## Condition track
-- **Fine → Hurt → Badly hurt → Out** — mark the current step as harm lands.
-- Current: **Fine**
-- *(Tougher foes may take more than one step to drop; note that here.)*
+## Health levels
+- **Bruised → Hurt → Injured → Wounded → Mauled → Crippled → Incapacitated** — mark the current level as harm lands; apply the wound penalty to their pools.
+- Current: **Bruised** (unharmed)
+- **Soak / damage types:** what they soak easily and what's **aggravated** against them (fire, sunlight, silver, claws — splat-specific).
 
-## Edges & troubles
-- **Edges** — what gives *them* advantage (terrain, numbers, a signature trick).
-- **Troubles** — the lever the Player can exploit to gain advantage or auto-win a beat.
+## Supernatural & levers
+- **Powers worth tracking:** a Discipline or two, a Gift, a Sphere effect, Rage/Gnosis/Blood/Quintessence on hand — only what will actually come up.
+- **The lever the Player can exploit** — a Flaw, a hunger, a derangement, a tribal taboo, a Paradox risk — to gain advantage or turn the scene.
 
-## Abilities, gear, tactics
-- Signature moves, weapons, or powers worth tracking.
-- **How they fight or scheme to win** — play the opposition honestly (see CLAUDE.md). What do they *do* when threatened, and what makes them break off or flee?
+## Tactics
+- Signature moves, weapons, or rites.
+- **How they fight or scheme to win** — play the opposition honestly (see CLAUDE.md). What do they *do* when threatened, and what makes them break off, flee, frenzy, or parley?
