@@ -1,8 +1,14 @@
-# Storyteller
+# Storyteller — a World of Darkness engine
 
-An AI-run tabletop roleplaying game. Open this project, talk to Claude, and it becomes your **Game Master**: it builds your character and world with you, then runs an ongoing, improvised adventure — narrating scenes, voicing characters, rolling dice fairly, and remembering everything between sessions.
+An AI-run tabletop roleplaying game for the **World of Darkness**. Open this project, talk to Claude, and it becomes your **Storyteller**: it builds your character and chronicle with you, then runs an ongoing, improvised story — narrating scenes, voicing characters, rolling the dice fairly, and remembering everything between sessions.
 
-No prior tabletop experience needed. The GM teaches you as you go.
+It plays three games on the classic **Storyteller System** (d10 dice pools):
+
+- **Mage: The Ascension 20th (M20)** — belief reshapes reality, at the cost of your certainty.
+- **Vampire: The Masquerade 20th (V20)** — the monster you're becoming versus the person you were.
+- **Werewolf: The Apocalypse 20th (W20)** — primal warriors in a war against corruption they're losing.
+
+You pick the game (or mix them, in **crossover** play) during Session Zero. No prior tabletop or World of Darkness experience needed — the Storyteller teaches you as you go.
 
 ## Get your own copy
 
@@ -30,19 +36,19 @@ To continue later, open the project and say **"Let's keep playing."** The GM pic
 
 ## How play works
 
-- The GM describes a scene and asks what you do. You answer in plain language — *"I search the desk," "I try to talk him down,"* whatever you want.
-- When the outcome is uncertain, the GM rolls real dice (`Tools/dice.py`) out in the open, so you always know a result wasn't fudged.
-- It starts with a simple built-in rule system. If you'd rather play a specific system (D&D, etc.), drop its rulebook into `Sourcebooks/` and tell the GM to use it.
+- The Storyteller describes a scene and asks what you do. You answer in plain language — *"I search the desk," "I try to talk him down,"* whatever you want.
+- When the outcome is uncertain, the Storyteller rolls real dice (`Tools/dice.py`) out in the open — d10 success pools the World of Darkness way — so you always know a result wasn't fudged.
+- It runs on a faithful, lightweight **Storyteller System** scaffold so you can play right away. For your game's full rules, drop your own M20/V20/W20 book into `Sourcebooks/` and the Storyteller digests it — those rules then take over.
 
 ## What's in here
 
 | Folder | What it's for |
 |--------|---------------|
 | `Character/` | Your character — sheet, backstory, portraits. |
-| `Game/` | The living campaign — world, timeline, current scene, open threads. |
-| `Cast/` | Every NPC and companion the GM voices, one folder each. |
-| `Sourcebooks/` | Drop rulebooks and lore here for the GM to use. |
-| `Tools/` | The dice roller. |
+| `Game/` | The living chronicle — `system.md` (which game is live), world, timeline, current scene, open threads. |
+| `Cast/` | Every NPC and companion the Storyteller voices, one folder each. |
+| `Sourcebooks/` | Drop your own M20/V20/W20 rulebooks and lore here for the Storyteller to digest. |
+| `Tools/` | The dice roller (Storyteller d10 pools + a generic utility roller). |
 | `PLAYER-NOTES.md` | Your spoiler-free notebook — what you know, want, and are chasing. The GM keeps it current; you can park your own notes there too. |
 | `CLAUDE.md` | The GM's instructions (how it runs the game). |
 

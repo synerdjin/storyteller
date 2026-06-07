@@ -11,25 +11,30 @@ The roller has two layers:
     else. It backs the engine's default d20-vs-target resolution.
 
   * SYSTEMS — interpret raw dice the way a specific game does. Pick one by
-    naming it as the first argument. Currently:
-        m20 / mage  — Mage: The Ascension 20th Anniversary (Storyteller d10 pool)
-    Each system is a thin layer over the generic roll, so adding more later
-    (dnd, v20, …) is just another entry in SYSTEMS at the bottom of this file.
+    naming it as the first argument. This engine runs the World of Darkness on
+    the Storyteller System (d10 success pools); all three supported games share
+    one resolver and differ only in their splat trappings:
+        m20 / mage     — Mage: The Ascension 20th Anniversary
+        v20 / vampire  — Vampire: The Masquerade 20th Anniversary
+        w20 / werewolf — Werewolf: The Apocalypse 20th Anniversary
+    Each system is a thin layer over the generic roll. The generic roller below
+    stays available as a low-level utility (for any odd die a scene needs).
 
-Generic usage:
+Generic usage (utility rolls):
     python dice.py 3d6+2
-    python dice.py d20 adv           # roll 2d20, keep highest (advantage)
-    python dice.py d20 dis           # roll 2d20, keep lowest  (disadvantage)
+    python dice.py d10 adv           # roll 2d10, keep highest (advantage)
+    python dice.py d10 dis           # roll 2d10, keep lowest  (disadvantage)
     python dice.py 1d8 1d6+1         # multiple expressions, shows a combined total
 
-Notation:  [count]d<sides>[+/-modifier]   e.g. d20, 2d6, 3d8+2, 1d4-1
+Notation:  [count]d<sides>[+/-modifier]   e.g. d10, 2d6, 3d8+2, 1d4-1
 Flags:     adv | advantage | dis | disadvantage   (apply to a single-die roll)
 
-Mage 20e usage:
+Storyteller pool usage (the default game resolution):
     python dice.py m20 7             # 7-die pool vs difficulty 6
-    python dice.py m20 7 -d 8        # difficulty 8 (standard range 3-9)
+    python dice.py v20 5 -d 7        # Vampire pool, difficulty 7
+    python dice.py w20 6 -r 2        # Werewolf pool + 2 Rage dice
     python dice.py m20 7 -s          # specialty: a 10 counts as two successes
-    python dice.py m20 7 -w          # spend Willpower: +1 automatic success, no botch
+    python dice.py v20 5 -w          # spend Willpower: +1 automatic success, no botch
 """
 
 import argparse
@@ -180,8 +185,12 @@ def resolve_storyteller_pool(rolls, difficulty, specialty=False, willpower=False
     }
 
 
-def format_storyteller(r):
-    """Render a resolve_storyteller_pool() result as auditable text (ASCII)."""
+def format_storyteller(r, label="Storyteller"):
+    """Render a resolve_storyteller_pool() result as auditable text (ASCII).
+
+    `label` names the game in the header (M20 / V20 / W20) so the output is
+    unambiguous about which system's pool was rolled.
+    """
     diff = r["difficulty"]
     faces = []
     for d in r["rolls"]:
@@ -203,7 +212,7 @@ def format_storyteller(r):
     flag_str = f"  ({', '.join(flags)})" if flags else ""
 
     header = (
-        f"M20 pool: {len(r['rolls'])}d10 vs difficulty {diff}{flag_str}\n"
+        f"{label} pool: {len(r['rolls'])}d10 vs difficulty {diff}{flag_str}\n"
         f"  dice: {'  '.join(faces)}\n"
         f"  successes rolled: {r['successes']}   ones: {r['ones']}"
     )
@@ -223,16 +232,19 @@ def format_storyteller(r):
     return f"{header}\n{verdict}"
 
 
-def run_m20(argv):
-    """Mage: The Ascension 20e — roll and interpret a d10 dice pool."""
+def _run_storyteller(argv, prog, label, pool_help, with_rage=False):
+    """Shared driver for every Storyteller-System game (M20 / V20 / W20).
+
+    The three games roll an identical d10 success pool, so they all funnel
+    through resolve_storyteller_pool(). `with_rage` adds Werewolf's option to
+    fold extra Rage dice into the pool. Garou nuances beyond that (extra
+    actions, frenzy) live in the player's sourcebook digest, not here.
+    """
     parser = argparse.ArgumentParser(
-        prog="dice.py m20",
-        description="Mage: The Ascension 20e (Storyteller d10 pool).",
+        prog=f"dice.py {prog}",
+        description=f"{label} (Storyteller d10 pool).",
     )
-    parser.add_argument(
-        "pool", type=int,
-        help="number of d10s (Attribute + Ability, Arete, etc.)",
-    )
+    parser.add_argument("pool", type=int, help=pool_help)
     parser.add_argument(
         "-d", "--difficulty", type=int, default=6,
         help="target number, clamped to 2-10 (default 6; standard range 3-9)",
@@ -245,26 +257,64 @@ def run_m20(argv):
         "-w", "--willpower", action="store_true",
         help="spend Willpower: one automatic success, cannot botch",
     )
+    if with_rage:
+        parser.add_argument(
+            "-r", "--rage", type=int, default=0,
+            help="Rage dice added to the pool (Garou spend; default 0)",
+        )
     ns = parser.parse_args(argv)
 
     if ns.pool < 1:
         parser.error("pool must be at least 1 die.")
+    rage = getattr(ns, "rage", 0)
+    if rage < 0:
+        parser.error("rage dice cannot be negative.")
     difficulty = max(2, min(10, ns.difficulty))
 
-    rolls = roll_dice(ns.pool, 10)
+    rolls = roll_dice(ns.pool + rage, 10)
     result = resolve_storyteller_pool(rolls, difficulty, ns.specialty, ns.willpower)
-    print(format_storyteller(result))
+    print(format_storyteller(result, label))
     return 0
+
+
+def run_m20(argv):
+    """Mage: The Ascension 20e — roll and interpret a d10 dice pool."""
+    return _run_storyteller(
+        argv, "m20", "M20",
+        "number of d10s (Attribute + Ability, Arete, etc.)",
+    )
+
+
+def run_v20(argv):
+    """Vampire: The Masquerade 20e — roll and interpret a d10 dice pool."""
+    return _run_storyteller(
+        argv, "v20", "V20",
+        "number of d10s (Attribute + Ability, Discipline, etc.)",
+    )
+
+
+def run_w20(argv):
+    """Werewolf: The Apocalypse 20e — roll and interpret a d10 dice pool."""
+    return _run_storyteller(
+        argv, "w20", "W20",
+        "number of d10s (Attribute + Ability, Gift, etc.)",
+        with_rage=True,
+    )
 
 
 # ── Dispatch ─────────────────────────────────────────────────────────────────
 #
-# Register a game system here to give it its own subcommand. New systems
-# (dnd, v20, …) plug in as one more entry — the generic roller stays the default.
+# Register a game system here to give it its own subcommand. The three World of
+# Darkness games share the Storyteller resolver; the generic NdS roller below
+# stays available as a low-level utility when no system name is given.
 
 SYSTEMS = {
     "m20": run_m20,
     "mage": run_m20,
+    "v20": run_v20,
+    "vampire": run_v20,
+    "w20": run_w20,
+    "werewolf": run_w20,
 }
 
 
