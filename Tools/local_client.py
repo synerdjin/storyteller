@@ -13,6 +13,7 @@ Quick check (needs Ollama running locally):
 """
 
 import json
+import time
 import urllib.error
 import urllib.request
 
@@ -23,17 +24,35 @@ class LocalUnavailable(RuntimeError):
     """The local model server can't be reached or returned an error."""
 
 
-def _post(url, payload, timeout):
+# Ollama can briefly return these while it loads or swaps a model into VRAM —
+# observed: a 400 on /api/embed when the embedder reloads behind a resident 14B
+# model on a 12 GB card. They clear on a quick retry. A genuine error (bad
+# request, server down) just fails again and surfaces the same way. We do NOT
+# retry 404 (model-not-found — not transient) or auth errors, and a refused
+# connection raises immediately so the caller can fall back to Claude fast.
+_TRANSIENT_HTTP = frozenset({400, 408, 409, 425, 429, 500, 502, 503, 504})
+_RETRIES = 2          # extra attempts beyond the first
+_RETRY_WAIT = 1.5     # seconds between attempts
+
+
+def _post(url, payload, timeout, _sleep=time.sleep):
     data = json.dumps(payload).encode("utf-8")
     req = urllib.request.Request(
         url, data=data, headers={"Content-Type": "application/json"})
-    try:
-        with urllib.request.urlopen(req, timeout=timeout) as resp:
-            return json.loads(resp.read().decode("utf-8"))
-    except urllib.error.URLError as e:
-        raise LocalUnavailable(f"cannot reach local model server at {url}: {e}")
-    except Exception as e:
-        raise LocalUnavailable(f"local model request failed: {e}")
+    for attempt in range(_RETRIES + 1):
+        try:
+            with urllib.request.urlopen(req, timeout=timeout) as resp:
+                return json.loads(resp.read().decode("utf-8"))
+        except urllib.error.HTTPError as e:  # subclass of URLError — catch first
+            if e.code in _TRANSIENT_HTTP and attempt < _RETRIES:
+                _sleep(_RETRY_WAIT)
+                continue
+            raise LocalUnavailable(
+                f"cannot reach local model server at {url}: {e}")
+        except urllib.error.URLError as e:
+            raise LocalUnavailable(f"cannot reach local model server at {url}: {e}")
+        except Exception as e:
+            raise LocalUnavailable(f"local model request failed: {e}")
 
 
 def embed(texts, cfg=None, root=None):
@@ -84,8 +103,62 @@ def ping(cfg=None, root=None):
             f"{', '.join(n for n in names if n) or '(none)'}")
 
 
+def _self_test():
+    """Lock down _post's retry policy with a fake urlopen (no server needed)."""
+    calls = {"n": 0}
+
+    class _Resp:
+        def __enter__(self): return self
+        def __exit__(self, *a): return False
+        def read(self): return b'{"ok": true}'
+
+    def fake_urlopen(fail_times, code):
+        def fake(req, timeout=None):
+            if calls["n"] < fail_times:
+                calls["n"] += 1
+                raise urllib.error.HTTPError("http://x", code, "err", {}, None)
+            return _Resp()
+        return fake
+
+    noop = lambda *_a, **_k: None
+    orig = urllib.request.urlopen
+    try:
+        # A transient code that clears: fails twice, then the retry succeeds.
+        calls["n"] = 0
+        urllib.request.urlopen = fake_urlopen(2, 503)
+        assert _post("http://x", {}, 5, _sleep=noop) == {"ok": True}
+        assert calls["n"] == 2
+
+        # A persistent transient code gives up after exactly _RETRIES+1 tries.
+        calls["n"] = 0
+        urllib.request.urlopen = fake_urlopen(99, 400)
+        try:
+            _post("http://x", {}, 5, _sleep=noop)
+            assert False, "expected LocalUnavailable after retries exhausted"
+        except LocalUnavailable:
+            pass
+        assert calls["n"] == _RETRIES + 1
+
+        # A non-transient code (404 model-not-found) raises on the first try.
+        calls["n"] = 0
+        urllib.request.urlopen = fake_urlopen(99, 404)
+        try:
+            _post("http://x", {}, 5, _sleep=noop)
+            assert False, "expected LocalUnavailable with no retry"
+        except LocalUnavailable:
+            pass
+        assert calls["n"] == 1
+    finally:
+        urllib.request.urlopen = orig
+
+    print("local_client self-test: OK")
+    return 0
+
+
 if __name__ == "__main__":
     import sys
+    if "--self-test" in sys.argv[1:]:
+        sys.exit(_self_test())
     try:
         print(ping())
     except LocalUnavailable as e:

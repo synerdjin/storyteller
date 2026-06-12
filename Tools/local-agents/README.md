@@ -79,6 +79,7 @@ planned reveal on its own.
 ## Testing without a GPU (these need no Ollama)
 
 ```bash
+python Tools/local_client.py --self-test
 python Tools/memory_index.py --self-test
 python Tools/memory_search.py --self-test
 python Tools/world_scribe.py --self-test
