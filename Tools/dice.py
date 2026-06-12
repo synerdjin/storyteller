@@ -130,11 +130,12 @@ def run_generic(argv):
     return 0
 
 
-# ── Storyteller d10-pool layer (Mage 20e; reusable for V20) ──────────────────
+# ── Storyteller d10-pool layer (M20 / V20 / W20) ─────────────────────────────
 #
-# The classic World-of-Darkness "Storyteller System" is shared by Mage 20e and
-# Vampire V20, so the resolver below is written for the engine, not the game.
-# A future `v20` system can call resolve_storyteller_pool() unchanged.
+# The classic World-of-Darkness "Storyteller System" is shared by all three
+# supported games, so the resolver below is written for the system, not any one
+# game: Mage, Vampire, and Werewolf all call resolve_storyteller_pool() through
+# the shared _run_storyteller() driver, differing only in their splat trappings.
 
 _DEGREES = {1: "Marginal", 2: "Moderate", 3: "Complete", 4: "Exceptional"}
 _PHENOMENAL = "Phenomenal"  # 5+ successes
@@ -318,11 +319,70 @@ SYSTEMS = {
 }
 
 
+def _self_test():
+    """Pin the rules-load-bearing logic: the Storyteller resolver and parsing.
+
+    Uses fixed dice (resolve_storyteller_pool is pure) so the rules — successes
+    vs. difficulty, 1s cancelling, botch detection, the willpower and specialty
+    exceptions — are asserted deterministically, not left to a live roll.
+    """
+    R = resolve_storyteller_pool
+
+    # Successes vs difficulty; no 1s.
+    r = R([8, 5, 9, 2], 6)
+    assert r["successes"] == 2 and r["ones"] == 0 and r["net"] == 2
+    assert r["outcome"] == "success"
+
+    # A 1 cancels a success.
+    r = R([8, 1, 7], 6)
+    assert r["successes"] == 2 and r["ones"] == 1 and r["net"] == 1
+    assert r["outcome"] == "success"
+
+    # Botch: at least one 1 and zero successes.
+    r = R([1, 3, 4], 6)
+    assert r["outcome"] == "botch" and r["net"] == 0
+
+    # NOT a botch if a success existed, even when 1s cancel it to zero.
+    r = R([7, 1], 6)
+    assert r["successes"] == 1 and r["ones"] == 1
+    assert r["outcome"] == "failure" and r["net"] == 0
+
+    # Plain failure: nothing meets difficulty, no 1s.
+    r = R([2, 3, 4], 6)
+    assert r["outcome"] == "failure" and r["net"] == 0
+
+    # Specialty: a rolled 10 counts as two successes (only with the flag).
+    assert R([10, 5], 6, specialty=True)["successes"] == 2
+    assert R([10, 5], 6, specialty=False)["successes"] == 1
+
+    # Willpower: +1 automatic success and can never botch.
+    r = R([1, 2, 3], 6, willpower=True)        # would botch without WP
+    assert r["outcome"] == "failure" and r["net"] == 0
+    r = R([1, 1, 2], 6, willpower=True)         # +1 auto - 2 ones → still no botch
+    assert r["outcome"] == "failure"
+    r = R([7, 8], 6, willpower=True)            # 2 successes + 1 auto = 3 net
+    assert r["net"] == 3 and r["outcome"] == "success"
+
+    # Generic expression: parsing + modifier within bounds.
+    line, total = roll_expression("3d6+2")
+    assert 5 <= total <= 20 and "+2" in line
+    try:
+        roll_expression("banana")
+        assert False, "expected a ValueError on a bad expression"
+    except ValueError:
+        pass
+
+    print("dice self-test: OK")
+    return 0
+
+
 def main(argv):
     args = argv[1:]
     if not args:
         print(__doc__)
         return 1
+    if args[0] == "--self-test":
+        return _self_test()
 
     system = SYSTEMS.get(args[0].lower())
     if system:

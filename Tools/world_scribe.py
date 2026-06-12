@@ -230,7 +230,7 @@ def run(root, dry_run=False, gen_fn=None, verbose=True):
         gen_fn = lambda system, prompt: local_client.generate(
             prompt, system=system, cfg=cfg, options={"temperature": 0.7})
 
-    entries, escalations = [], []
+    entries, escalations, failed = [], [], []
     for a in agents:
         context = ""
         if not dry_run:
@@ -248,8 +248,14 @@ def run(root, dry_run=False, gen_fn=None, verbose=True):
             print(f"[system]\n{sys_critic}\n[user]\n"
                   f"{critic_prompt(a, {'headline': '<plot headline>', 'what_happened': '<plot body>', 'surface': '<surface>'})}")
             continue
-        plot = parse_json(gen_fn(sys_plot, pprompt))
-        verdict = parse_json(gen_fn(sys_critic, critic_prompt(a, plot)))
+        # Isolate each agent: a single malformed local-model completion must not
+        # discard the developments already scribed for the others this tick.
+        try:
+            plot = parse_json(gen_fn(sys_plot, pprompt))
+            verdict = parse_json(gen_fn(sys_critic, critic_prompt(a, plot)))
+        except Exception as e:
+            failed.append((a["name"], str(e)))
+            continue
         entries.append(format_entry(day, a, plot, verdict))
         if verdict.get("needs_claude"):
             escalations.append(a["name"])
@@ -258,13 +264,17 @@ def run(root, dry_run=False, gen_fn=None, verbose=True):
         print(f"\n(--dry-run: {len(agents)} agent(s); prompts above, nothing written.)")
         return 0
 
-    append_developments(root, entries)
+    if entries:
+        append_developments(root, entries)
     if verbose:
         print(f"Scribed {len(entries)} development(s) into Game/developments.md.")
         if escalations:
             print("Escalate to Claude's world-director for pivotal beats: "
                   + ", ".join(escalations))
-    return 0
+        for name, err in failed:
+            print(f"Skipped {name}: local model output unusable ({err}). "
+                  f"Re-run the tick or scribe this agent via the world-director.")
+    return 1 if failed and not entries else 0
 
 
 def _find_root(start):
@@ -276,6 +286,7 @@ def _find_root(start):
 
 
 def main(argv):
+    local_config.enable_utf8_output()
     p = argparse.ArgumentParser(
         description="Local plot-scribe + critic for the living world.")
     p.add_argument("--dry-run", action="store_true",
@@ -340,6 +351,33 @@ def _self_test():
         assert "Escalate: claude" in dev          # critic flagged it pivotal
         assert "Drained: no" in dev
         assert "*(none yet)*" not in dev          # placeholder removed
+
+    # Durability: one agent's unusable completion must not discard the other's.
+    q2 = (
+        "## good\n- Source: `Cast/good/drives.md`\n"
+        "- State: `moving`  |  Clock: 2/4  |  Salience: 3\n- Goal: open a shop\n"
+        "## bad\n- Source: `Cast/bad/drives.md`\n"
+        "- State: `moving`  |  Clock: 2/4  |  Salience: 3\n- Goal: burn it down\n"
+    )
+
+    def flaky(system, prompt):
+        if "AGENT: bad" in prompt:
+            return "the model rambled and produced no json at all"
+        if "Triage this" in prompt:
+            return ('{"salience": 2, "prose_worthy": true, '
+                    '"needs_claude": false, "reason": "routine"}')
+        return ('{"headline": "Good opens a shop", "what_happened": "Done.", '
+                '"surface": "hidden", "trigger": "", "arc": "good"}')
+
+    with tempfile.TemporaryDirectory() as d:
+        root = Path(d)
+        (root / "Game").mkdir()
+        (root / "Game" / ".world-tick-queue.md").write_text(q2, encoding="utf-8")
+        rc = run(root, gen_fn=flaky, verbose=False)
+        assert rc == 0, rc                         # some succeeded → success
+        dev = (root / "Game" / "developments.md").read_text(encoding="utf-8")
+        assert "Good opens a shop" in dev          # good agent survived
+        assert "bad:" not in dev                    # bad agent skipped, not written
 
     print("world_scribe self-test: OK")
     return 0

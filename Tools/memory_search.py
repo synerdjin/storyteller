@@ -51,6 +51,38 @@ def load_index(root):
             if l.strip()]
 
 
+def load_meta(root):
+    p = Path(root).joinpath(*INDEX_DIR, "meta.json")
+    if not p.exists():
+        return {}
+    try:
+        return json.loads(p.read_text(encoding="utf-8"))
+    except Exception:
+        return {}
+
+
+def check_index_compatible(meta, embed_model, query_dim=None):
+    """Guard against searching a stale index with the wrong embedder.
+
+    cosine() uses zip(), which silently truncates mismatched-dimension
+    vectors — so a query embedded by a *different* model than the one that
+    built the index would return confidently-ranked garbage instead of an
+    error. Refuse rather than mislead: the whole point of retrieval is to
+    ground the fiction in real facts, not plausible noise.
+    """
+    idx_model = meta.get("embed_model")
+    if idx_model and embed_model and idx_model != embed_model:
+        raise RuntimeError(
+            f"index was built with embedder '{idx_model}' but the config now "
+            f"uses '{embed_model}' — the vectors are incomparable. "
+            f"Run `python Tools/memory_index.py --rebuild`.")
+    idx_dim = meta.get("dim")
+    if idx_dim and query_dim is not None and query_dim != idx_dim:
+        raise RuntimeError(
+            f"query embedding has {query_dim} dims but the index has {idx_dim} "
+            f"— re-embed with `python Tools/memory_index.py --rebuild`.")
+
+
 def cosine(a, b):
     s = sum(x * y for x, y in zip(a, b))
     na = math.sqrt(sum(x * x for x in a))
@@ -85,7 +117,10 @@ def search_text(root, query, scope="gm", k=8, since_day=None, owner=None,
     if local_client is None:
         raise RuntimeError("local_client unavailable; cannot embed query")
     cfg = cfg or local_config.load_config(root)
+    meta = load_meta(root)
+    check_index_compatible(meta, cfg["embed_model"])      # fail fast on model swap
     vec = local_client.embed([query], cfg=cfg)[0]
+    check_index_compatible(meta, cfg["embed_model"], len(vec))  # and on dim
     return search(root, vec, scope=scope, k=k, since_day=since_day,
                   owner=owner, ftype=ftype)
 
@@ -108,6 +143,21 @@ def format_results(scored, snippet=240):
     return "\n".join(out)
 
 
+def scope_banner(scope, count):
+    """A header that makes the firewall scope of a result set self-evident.
+
+    The default scope is `gm` (everything), so a result set pasted into an
+    npc-actor briefing could carry secrets without anyone noticing. This banner
+    labels every dump so a GM-scoped set is obviously *not* actor-safe.
+    Returns (banner_text, actor_safe).
+    """
+    allow = SCOPES.get(scope, SCOPES["gm"])
+    actor_safe = "secret" not in allow and "gm" not in allow
+    tag = ("actor-safe" if actor_safe
+           else "GM-ONLY — may contain secrets, NOT for an npc-actor briefing")
+    return f"# scope={scope} ({tag}) — {count} result(s)", actor_safe
+
+
 def results_json(scored):
     return [{"score": round(score, 4), "path": r["path"], "day": r.get("day"),
              "visibility": r["visibility"], "owner": r.get("owner"),
@@ -124,6 +174,7 @@ def _find_root(start):
 
 
 def main(argv):
+    local_config.enable_utf8_output()
     p = argparse.ArgumentParser(description="Semantic search over campaign memory.")
     p.add_argument("query", nargs="?", help="what to search for")
     p.add_argument("--scope", choices=sorted(SCOPES), default="gm",
@@ -153,9 +204,13 @@ def main(argv):
     except Exception as e:
         print(f"memory_search error: {e}")
         return 1
+    banner, actor_safe = scope_banner(args.scope, len(scored))
     if args.json:
-        print(json.dumps(results_json(scored), ensure_ascii=False, indent=2))
+        print(json.dumps({"scope": args.scope, "actor_safe": actor_safe,
+                          "count": len(scored), "results": results_json(scored)},
+                         ensure_ascii=False, indent=2))
     else:
+        print(banner)
         print(format_results(scored))
     return 0
 
@@ -200,6 +255,24 @@ def _self_test():
 
     # citation formatting.
     assert "[Day 5]" in _citation(recs[0])
+
+    # scope banner labels actor-safety correctly.
+    assert scope_banner("public", 3)[1] is True
+    assert scope_banner("player", 1)[1] is True
+    assert scope_banner("gm", 5)[1] is False
+    assert "GM-ONLY" in scope_banner("gm", 5)[0]
+
+    # stale-index guard: wrong embedder or wrong dimension must raise, not
+    # silently rank garbage. A matching index (or empty meta) must pass.
+    check_index_compatible({}, "any-model")  # no meta yet → no opinion, OK
+    check_index_compatible({"embed_model": "m", "dim": 3}, "m", 3)  # match → OK
+    for bad in (lambda: check_index_compatible({"embed_model": "old"}, "new"),
+                lambda: check_index_compatible({"embed_model": "m", "dim": 3}, "m", 768)):
+        try:
+            bad()
+            assert False, "expected stale-index guard to raise"
+        except RuntimeError:
+            pass
 
     print("memory_search self-test: OK")
     return 0
