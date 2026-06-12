@@ -174,6 +174,41 @@ This is the one trap. The **`world-director` is GM-side and secret-aware** — i
 ### Optional: running ticks between sessions with Cowork
 By default you tick **during play**, which is all most campaigns need. If you want the world to evolve a little between sessions, you can wrap the loop as a **Claude Cowork scheduled task** whose saved prompt is roughly: *"In this campaign repo, run `python Tools/world_tick.py --elapsed 1`, then if the queue is non-empty invoke the `world-director`, and stop."* Cowork runs it on your chosen cadence — note it only runs while your machine is awake and the desktop app is open, and each run is its own session. Keep the cadence gentle (a solo story saturates fast), and remember the secrecy rule holds: such a session has full GM-side access and must leave its output staged in `developments.md`, never surfaced to the Player on its own.
 
+## Local preprocessing & semantic memory — spend Claude where it counts
+
+*Optional, and off by default.* A campaign with no local model runs exactly as
+everything above describes. But the engine's expensive work is *you* (live play,
+player-facing prose); the cheap, high-frequency work — finding relevant past
+material, scribing routine off-screen moves, triaging them — can run on a small
+model on the Player's own GPU. Set it up via `Tools/local-agents/README.md`; the
+tools fall back silently when no local server is running.
+
+Two habits, once it's on:
+
+- **Retrieve, don't re-read.** When you need to stay consistent with the past —
+  on resume, or mid-scene ("what do we know about the Sabbat contact? have we met
+  this faction?") — run `python Tools/memory_search.py "<question>"` instead of
+  re-reading whole files. It returns the most relevant chunks **with citations
+  (path + Day N)**, so you ground facts in the record rather than recall. Re-index
+  at session end / save points: `python Tools/memory_index.py` (incremental).
+  - **The firewall holds here too.** `--scope public` returns only actor-safe
+    chunks (never `gm-secrets`, `secrets.md`, `drives.md`, `world-state`,
+    `developments`, or GM working files). When you assemble an **`npc-actor`
+    briefing**, retrieve with `--scope public --owner <name>` — never paste raw
+    `gm` results into an actor's prompt. `--scope gm` (the default) is for you and
+    the secret-aware world tools only.
+
+- **Scribe routine world-moves locally; escalate the pivots.** After a world tick,
+  instead of always invoking the Opus `world-director`, run
+  `python Tools/world_scribe.py` — a local plot-scribe writes the off-screen move
+  into `Game/developments.md` and a local critic triages it. Beats the critic
+  marks **`Escalate: claude`** (a planned reveal, a major faction turn, anything
+  turning on a hidden secret) are the ones you hand to the real `world-director`;
+  the local model never resolves those on its own. Player-facing **prose stays on
+  Claude** — the local tier produces *facts*, you (or a prose pass) produce the
+  literature. Log what ran locally in `Game/cost-ledger.md` (be seen to be fair —
+  the savings are visible, not a vibe).
+
 ## NPC voicing — keeping secrets out of their mouths
 
 NPCs and companions are **data**, not separate minds. Each lives in `Cast/<name>/` with:
