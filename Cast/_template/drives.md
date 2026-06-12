@@ -53,4 +53,4 @@ The story behind the graph edges above — the history with each named entity, w
 What each resource pool actually *is* in the fiction (whose ear the `influence` buys, who the `muscle` is, what the `secrets` are) — so a clash resolves in concrete terms, not abstract points.
 
 ## Reflection notes
-Higher-level conclusions the director has drawn over past ticks — about the Player, rivals, or their own situation. (The Generative-Agents "reflection" step: synthesizing events into beliefs keeps a long-running character coherent instead of drifting.) Start empty; the director appends here.
+Higher-level **beliefs** this agent has drawn over past ticks — about the Player, rivals, or their own situation. (The Generative-Agents "reflection" step: synthesizing events into beliefs keeps a long-running character coherent instead of drifting.) Start empty; the loop appends here automatically — the **local scribe** synthesises a belief whenever the agent completes a phase (an FSM transition) or fills a clock, and the **`world-director`** may then *re-plan* from it (retarget the goal, flip a relationship). See `CLAUDE.md` → "The agent loop."

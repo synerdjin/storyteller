@@ -61,6 +61,15 @@ DEFAULT_CRITIC_SYS = (
     "turns on a hidden secret — to need a frontier model rather than local "
     "handling. You answer with one JSON object and nothing else."
 )
+DEFAULT_REFLECT_SYS = (
+    "You are the REFLECTION step for a living NPC in a solo World of Darkness "
+    "game (the generative-agents 'reflect' stage). Given a character's recent "
+    "memories, synthesise ONE or TWO concise, higher-level BELIEFS they would now "
+    "hold — about a rival, the Player, their own situation, or their odds. "
+    "Beliefs, not events: 'Vance will never yield the docks without blood', not "
+    "'Vance hired thugs'. Stay strictly inside what this character could know. "
+    "Answer with one JSON object and nothing else."
+)
 
 
 def _load_sys(name, default):
@@ -89,6 +98,11 @@ def parse_queue(text):
         if h:
             if cur:
                 agents.append(cur)
+            cur = None
+            # The agent-mover sections always precede these special sections;
+            # stop so their `- Source:` lines aren't mistaken for agents.
+            if h.group(1).strip() in ("Interactions", "Reflection"):
+                break
             cur = {"name": h.group(1).strip(), "source": None, "state": None,
                    "clock": None, "salience": None, "goal": None, "why": None}
             continue
@@ -165,6 +179,73 @@ def parse_interactions(text):
         if it.get("kind") == "player-pressure" and not it.get("over"):
             it["over"] = "player"
     return [it for it in items if it.get("kind")]
+
+
+def parse_reflection(text):
+    """Parse the '## Reflection' section into [{name, source, trigger}]."""
+    lines = text.splitlines()
+    start = None
+    for i, ln in enumerate(lines):
+        if re.match(r"^##\s+Reflection\s*$", ln):
+            start = i + 1
+            break
+    if start is None:
+        return []
+    end = len(lines)
+    for i in range(start, len(lines)):
+        if re.match(r"^##\s+\S", lines[i]) and not lines[i].startswith("###"):
+            end = i
+            break
+    items, cur = [], None
+    for ln in lines[start:end]:
+        h = re.match(r"^###\s+(.*\S)\s*$", ln)
+        if h:
+            if cur:
+                items.append(cur)
+            cur = {"name": h.group(1).strip(), "source": None, "trigger": None}
+            continue
+        if cur is None:
+            continue
+        b = ln.strip()
+        if b.startswith("- Source:"):
+            m = re.search(r"`([^`]+)`", b)
+            cur["source"] = m.group(1) if m else None
+        elif b.startswith("- Trigger:"):
+            cur["trigger"] = b[len("- Trigger:"):].strip()
+    if cur:
+        items.append(cur)
+    return [it for it in items if it.get("source")]
+
+
+def reflection_prompt(name, trigger, context):
+    return (
+        f"Reflect as the living NPC '{name}'. They just {trigger or 'reached a beat'}.\n\n"
+        f"THEIR RECENT MEMORY (what they know — do not go beyond it):\n"
+        f"{context or '(little on record yet)'}\n\n"
+        f"Synthesise 1-2 higher-level beliefs this character now holds. Return ONLY "
+        f'this JSON:\n{{"beliefs": ["<a belief, one sentence>", "<optional second>"]}}'
+    )
+
+
+def append_reflection(root, source, beliefs, day):
+    """Append synthesised beliefs to an agent's drives.md Reflection notes."""
+    p = Path(root) / source
+    if not p.exists() or not beliefs:
+        return False
+    text = p.read_text(encoding="utf-8")
+    dl = f"Day {day}" if day is not None else "Day ?"
+    block = "".join(f"- *[{dl}]* {b.strip()}\n" for b in beliefs if b and b.strip())
+    if not block:
+        return False
+    heading = "## Reflection notes"
+    if heading in text:
+        idx = text.index(heading)
+        nl = text.index("\n", idx)
+        text = text[:nl + 1] + block + text[nl + 1:]
+    else:
+        text = text.rstrip() + f"\n\n{heading}\n{block}"
+    p.write_text(text, encoding="utf-8")
+    return True
 
 
 def plot_prompt(agent, context):
@@ -394,6 +475,8 @@ def run(root, dry_run=False, gen_fn=None, verbose=True):
 
     sys_plot = _load_sys("plot-scribe.md", DEFAULT_PLOT_SYS)
     sys_critic = _load_sys("critic.md", DEFAULT_CRITIC_SYS)
+    sys_reflect = _load_sys("reflector.md", DEFAULT_REFLECT_SYS)
+    reflectors = parse_reflection(qtext)
     day = current_day(root)
     cfg = local_config.load_config(root)
     if gen_fn is None and not dry_run:
@@ -476,9 +559,35 @@ def run(root, dry_run=False, gen_fn=None, verbose=True):
             plot_entries.append(build_plot_entry(ix, plot, arc, day))
             promoted.append(arc)
 
+    # Reflection pass — synthesise beliefs for agents who completed a phase.
+    reflected = 0
+    for rf in reflectors:
+        context = ""
+        if not dry_run:
+            try:
+                scored = memory_search.search_text(
+                    root, f"{rf['name']}", scope="gm", owner=rf["name"], k=8, cfg=cfg)
+                context = memory_search.format_results(scored, snippet=200)
+            except Exception:
+                context = ""
+        rprompt = reflection_prompt(rf["name"], rf.get("trigger"), context)
+        if dry_run:
+            print(f"\n=== {rf['name']} — REFLECTION ===")
+            print(f"[system]\n{sys_reflect}\n[user]\n{rprompt}")
+            continue
+        try:
+            out = parse_json(gen_fn(sys_reflect, rprompt))
+            beliefs = out.get("beliefs") or []
+        except Exception as e:
+            failed.append((f"{rf['name']} (reflection)", str(e)))
+            continue
+        if append_reflection(root, rf["source"], beliefs, day):
+            reflected += 1
+
     if dry_run:
         print(f"\n(--dry-run: {len(agents)} agent(s), {len(interactions)} "
-              f"interaction(s); prompts above, nothing written.)")
+              f"interaction(s), {len(reflectors)} reflection(s); prompts above, "
+              f"nothing written.)")
         return 0
 
     if entries:
@@ -497,6 +606,8 @@ def run(root, dry_run=False, gen_fn=None, verbose=True):
         if propagated:
             print(f"Propagated {propagated} observation(s) into NPC memories "
                   f"(who'd plausibly hear).")
+        if reflected:
+            print(f"Reflected {reflected} agent(s): new beliefs in their drives.md.")
         if promoted:
             print(f"Promoted {len(promoted)} new plot(s) into Game/plots.md: "
                   + ", ".join(promoted))
@@ -673,6 +784,35 @@ def _self_test():
         run(root, gen_fn=stub3, verbose=False)
         plots2 = (root / "Game" / "plots.md").read_text(encoding="utf-8")
         assert plots2.count("### mara-vance-harbor-council") == 1, "no duplicate plot"
+
+    # --- reflection: the agent loop's reflect step ---
+    qr = (
+        "## mara\n- Source: `Cast/mara/drives.md`\n"
+        "- State: `moving`  |  Clock: 3/3  |  Salience: 4\n- Goal: control x\n\n"
+        "## Reflection\n\n"
+        "### mara\n- Source: `Cast/mara/drives.md`\n- Trigger: entered moving\n")
+    # the Reflection section must NOT be mistaken for an agent mover
+    assert [a["name"] for a in parse_queue(qr)] == ["mara"], "Reflection isn't an agent"
+    rf = parse_reflection(qr)
+    assert len(rf) == 1 and rf[0]["name"] == "mara"
+    assert rf[0]["source"] == "Cast/mara/drives.md" and rf[0]["trigger"] == "entered moving"
+    assert "REFLECTION" in DEFAULT_REFLECT_SYS or "reflect" in DEFAULT_REFLECT_SYS.lower()
+
+    with tempfile.TemporaryDirectory() as d:
+        root = Path(d)
+        mp = root / "Cast" / "mara"
+        mp.mkdir(parents=True)
+        (mp / "drives.md").write_text(
+            "---\nliving: true\nstate: moving\n---\n\n## Reflection notes\n",
+            encoding="utf-8")
+        ok = append_reflection(root, "Cast/mara/drives.md",
+                               ["Vance will not yield the docks without blood."], 9)
+        drv = (mp / "drives.md").read_text(encoding="utf-8")
+        assert ok and "Vance will not yield" in drv and "[Day 9]" in drv, drv
+        # creates the heading if missing
+        (mp / "drives.md").write_text("---\nliving: true\n---\n", encoding="utf-8")
+        append_reflection(root, "Cast/mara/drives.md", ["A new fear took root."], 9)
+        assert "## Reflection notes" in (mp / "drives.md").read_text(encoding="utf-8")
 
     print("world_scribe self-test: OK")
     return 0

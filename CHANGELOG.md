@@ -11,6 +11,21 @@ Version numbers are `MAJOR.MINOR.PATCH`:
 
 ---
 
+## 2.5.0 — 2026-06-12
+
+### Added — the agent loop (reflection + re-planning)
+The third and capstone generative-agents subsystem. The pieces of the Concordia loop already existed but weren't *closed*: agents observed (memory) and retrieved (`memory_search`) but rarely **reflected**, and never **re-planned**. Now they do — so an NPC's behaviour changes in response to what they've learned and how a contest is going, integrating the ledger pressure (2.3) and the social observations (2.4).
+
+- **Reflect** — `world_tick.py` flags an agent for reflection when it completes an FSM phase or culminates a clock (deterministic trigger, no new state), in a new queue `## Reflection` section. `world_scribe.py` runs a local **reflection pass**: it retrieves the agent's own recent memory and synthesises 1–2 higher-level **beliefs**, appended to their `drives.md` Reflection notes. New overridable prompt `Tools/local-agents/reflector.md`.
+- **Plan** — `.claude/agents/world-director.md` gains a **re-planning** responsibility: when an agent has reflected or a control ledger swings hard (`phase: climax`), the director may change what they *want* — retarget the `goal`, resize the `clock`, flip a `relationships` edge — so rivals adapt instead of looping. Consequential and secret-aware, so it stays on Claude.
+- **`world_scribe.py`** parsing hardened: the `## Reflection` and `## Interactions` sections can no longer be mistaken for agent movers.
+- **`CLAUDE.md`** documents "The agent loop" (observe → retrieve → reflect → plan) in The living world; `Cast/_template/drives.md` Reflection-notes guidance updated.
+
+This completes the arc begun in 2.1: the living world is now a fair, legible **generative-agents social simulation** — agents with goals and values that collide over deterministic stakes, spread news along a social graph, and adapt their plans as they learn.
+
+### Campaign migration
+- **Optional, automatic.** Reflection runs locally whenever an agent completes a phase and has a `drives.md`; re-planning happens through the normal `world-director` escalation. Nothing to set up.
+
 ## 2.4.0 — 2026-06-12
 
 ### Added — social topology & information propagation

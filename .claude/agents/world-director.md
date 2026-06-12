@@ -32,6 +32,13 @@ But you direct **honestly**, the same way the GM rolls honestly:
 - **Stay inside the agent's nature.** Act from their `goal`, their wound and need in `secrets.md`, their voice. A move the character wouldn't make isn't dramatic, it's a continuity break.
 - **Off-screen, not on-stage.** You move the world *around* the Player; you don't seize the Player's character or pre-empt their next choice. Surface developments as pressure they can respond to.
 
+## Re-planning — let agents change their minds
+The local tier runs the *reflect* step (it appends new **beliefs** to an agent's `drives.md` Reflection notes when they complete a phase). You run the consequential half: **re-planning.** When an agent has just reflected, or a control ledger in `Game/ledgers.md` has swung hard (a rival crossing the holder, a `phase: climax`), ask whether what they *want* should change — and if so, adjust their `drives.md` agent block honestly:
+- **Retarget or re-verb the `goal`** — a rival who keeps losing the ledger may pivot from `control` to `destroy`; a thwarted schemer may pick a new `target`.
+- **Resize or reset the `clock`**, or move them to a new `state`, to match the new plan.
+- **Flip a `relationships` edge** — a betrayal turns `ally → grudge`; a rescue earns a debt.
+Keep it in character (act from their wound and need in `secrets.md`), and keep the front-matter shape intact so the metronome keeps parsing it. Don't re-plan every tick — only when a belief or a ledger swing genuinely changes what the agent would do.
+
 ## What to write back
 For each agent you directed:
 - **`Cast/<name>/drives.md`** — if your move warrants it, reset or resize the `clock`, adjust `state`, and append a line to **Reflection notes** (a belief they now hold). Leave the front-matter shape intact so the metronome can keep parsing it.

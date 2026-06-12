@@ -614,7 +614,7 @@ def write_back(agents):
 # --------------------------------------------------------------------------- #
 
 
-def summarize(agents, selected, interactions, args):
+def summarize(agents, selected, interactions, reflectors, args):
     out = []
     flags = []
     if args.elapsed != 1:
@@ -625,7 +625,8 @@ def summarize(agents, selected, interactions, args):
         flags.append("fail")
     out.append(f"World tick ({', '.join(flags) or 'one beat'}): "
                f"{len(agents)} living, {sum(changed(a) for a in agents)} moved, "
-               f"{len(selected)} queued, {len(interactions)} interaction(s).")
+               f"{len(selected)} queued, {len(interactions)} interaction(s), "
+               f"{len(reflectors)} reflecting.")
     for it in interactions:
         who = f"{it.a.name} vs {it.b.name}" if it.b else f"{it.a.name} → player"
         over = f" over {it.over}" if it.over and it.over != "player" else ""
@@ -657,7 +658,7 @@ def _fmt_goal(agent):
     return str(g) if g is not None else "(unset)"
 
 
-def write_queue(root, selected, interactions, args, dry_run):
+def write_queue(root, selected, interactions, reflectors, args, dry_run):
     path = root / "Game" / ".world-tick-queue.md"
     lines = [
         "# World-tick queue (for the world-director subagent)",
@@ -670,7 +671,7 @@ def write_queue(root, selected, interactions, args, dry_run):
         f"Tick: elapsed={args.elapsed}, dawdle={args.dawdle}, fail={args.fail}.",
         "",
     ]
-    if not selected and not interactions:
+    if not selected and not interactions and not reflectors:
         lines.append("**Queue empty.** Nothing pressing advanced this tick — "
                      "no deliberation needed.")
     for a in selected:
@@ -730,6 +731,29 @@ def write_queue(root, selected, interactions, args, dry_run):
                 "`Game/plots.md` if it becomes a standing conflict.")
             lines.append("")
 
+    if reflectors:
+        lines += [
+            "## Reflection",
+            "",
+            "> These agents just completed a phase or culminated a clock — the",
+            "> agent loop's *reflect* step. Synthesise their recent memory into 1–2",
+            "> higher-level beliefs and append them to that agent's `drives.md`",
+            "> **Reflection notes**. If a new belief warrants it, the director may",
+            "> *re-plan*: adjust the agent's `goal` / `clock` / `relationships`.",
+            "",
+        ]
+        for a in reflectors:
+            why = "entered " + str(a.fields.get("state")) if a.transitioned \
+                else "clock filled"
+            lines += [
+                f"### {a.name}",
+                f"- Source: `{a.path.as_posix()}`",
+                f"- Trigger: {why}",
+                "- Reflect: append a synthesised belief to their Reflection notes; "
+                "re-plan if it changed what they want.",
+                "",
+            ]
+
     text = "\n".join(lines) + "\n"
     if not dry_run:
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -753,10 +777,13 @@ def run(root, args):
     selected = candidates[: args.max]
     interactions = detect_interactions(agents, args.max)
     apply_ledgers(root, agents, interactions, args.dry_run)
+    # An agent is "due for reflection" when it completes a phase (FSM transition)
+    # or culminates a clock — natural beats to synthesise what it has learned.
+    reflectors = [a for a in agents if a.transitioned or a.became_full][: args.max]
     if not args.dry_run:
         write_back(agents)
-    _, _ = write_queue(root, selected, interactions, args, args.dry_run)
-    print(summarize(agents, selected, interactions, args))
+    _, _ = write_queue(root, selected, interactions, reflectors, args, args.dry_run)
+    print(summarize(agents, selected, interactions, reflectors, args))
     if args.dry_run:
         print("  (--dry-run: no files written.)")
     return 0
