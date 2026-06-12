@@ -9,3 +9,7 @@ __pycache__/
 
 # Living-world tick: ephemeral hand-off from the metronome to the world-director
 Game/.world-tick-queue.md
+
+# Local semantic-memory index: a rebuildable artifact (markdown is the source of
+# truth). Regenerate any time with `python Tools/memory_index.py`.
+Game/.memory-index/
