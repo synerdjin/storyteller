@@ -373,6 +373,7 @@ def _find_root(start):
 
 
 def main(argv):
+    local_config.enable_utf8_output()
     p = argparse.ArgumentParser(description="Build the local semantic-memory index.")
     p.add_argument("--rebuild", action="store_true",
                    help="re-embed everything (ignore the existing index)")

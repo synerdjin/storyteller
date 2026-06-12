@@ -18,6 +18,7 @@ stdlib only. Importing this never touches the network — it only reads config.
 
 import json
 import os
+import sys
 from pathlib import Path
 
 # Built-in defaults. Tuned for an RTX 4070 (12 GB): the embedder is tiny and the
@@ -26,7 +27,7 @@ from pathlib import Path
 DEFAULTS = {
     "host": "http://localhost:11434",     # Ollama's default address
     "embed_model": "nomic-embed-text",    # ~768-dim, <2 GB VRAM, fast
-    "llm_model": "qwen2.5:14b-instruct",  # plot/critic scribe (8-9 GB at Q4)
+    "llm_model": "qwen3:14b",             # plot/critic scribe (~9 GB at Q4)
     "embed_timeout": 60,
     "llm_timeout": 300,
 }
@@ -36,6 +37,24 @@ _ENV = {
     "embed_model": "STORYTELLER_EMBED_MODEL",
     "llm_model": "STORYTELLER_LLM_MODEL",
 }
+
+
+def enable_utf8_output():
+    """Make stdout/stderr UTF-8 so printing campaign text never crashes.
+
+    Campaign markdown is full of em-dashes, arrows, and emoji; on Windows the
+    console defaults to a legacy code page (cp1252) that can't encode them,
+    so a plain `print()` of a search result raises UnicodeEncodeError. Every
+    CLI entry point calls this first. Best-effort: silently no-ops if the
+    streams can't be reconfigured (e.g. when piped through a wrapper).
+    """
+    for stream in (sys.stdout, sys.stderr):
+        reconfig = getattr(stream, "reconfigure", None)
+        if reconfig is not None:
+            try:
+                reconfig(encoding="utf-8", errors="replace")
+            except Exception:
+                pass
 
 
 def load_config(root=None):
@@ -59,7 +78,6 @@ def load_config(root=None):
 
 
 if __name__ == "__main__":
-    import sys
     root = Path.cwd()
     for cand in [root, *root.parents]:
         if (cand / "CLAUDE.md").exists() or (cand / "Game").is_dir():

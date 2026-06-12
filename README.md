@@ -48,7 +48,7 @@ To continue later, open the project and say **"Let's keep playing."** The GM pic
 | `Game/` | The living chronicle — `system.md` (which game is live), world, timeline, current scene, open threads. |
 | `Cast/` | Every NPC and companion the Storyteller voices, one folder each. |
 | `Sourcebooks/` | Drop your own M20/V20/W20 rulebooks and lore here for the Storyteller to digest. |
-| `Tools/` | The dice roller (Storyteller d10 pools + a generic utility roller). |
+| `Tools/` | The dice roller (Storyteller d10 pools + a generic utility roller), plus an optional local-compute layer that offloads bookkeeping to a model on your own GPU. |
 | `PLAYER-NOTES.md` | Your spoiler-free notebook — what you know, want, and are chasing. The GM keeps it current; you can park your own notes there too. |
 | `CLAUDE.md` | The GM's instructions (how it runs the game). |
 
@@ -61,6 +61,12 @@ The GM keeps its secrets in `Game/gm-secrets.md` and each character's `Cast/<nam
 If you want undo and the ability to branch alternate timelines, the GM can save your progress with git after each session. It'll ask first.
 
 A gentle word: save points are for *stopping and resuming*, or for deliberately exploring a "what if" timeline — not for reloading the instant a roll goes against you. The stakes are what make a win feel earned; quietly reverting every setback removes them. Play your bad rolls and see where the story takes you. 🎲
+
+## Running it cheaper (optional, advanced)
+
+A solo chronicle grows, and so does the cost of feeding all that history to Claude each turn. If you have an NVIDIA GPU (a 12 GB card like an RTX 4070 is plenty), the engine can offload its *bookkeeping* — semantic memory search, scribing off-screen events between scenes, triaging what matters — to a small model running on your own machine via [Ollama](https://ollama.com), so Claude's budget is spent on live play and the prose you actually read. A side benefit: your GM secrets never leave your machine.
+
+It's **entirely optional and additive** — with no local model present, everything runs exactly as described above. Setup, model choices, and the full design live in [`Tools/local-agents/README.md`](Tools/local-agents/README.md).
 
 ## Updating the engine
 
@@ -84,3 +90,5 @@ Each role runs on the model that fits how it's used. The one-time creative build
 | npc-actor | Sonnet | `.claude/agents/npc-actor.md` (frontmatter) |
 
 To change any of them, edit the `model:` line in that agent's file (`opus` / `sonnet` / `haiku`). The Game Master is the session model — `.claude/settings.json` sets the default when you open the project, and you can switch any time with `/model`.
+
+The optional [local-compute layer](#running-it-cheaper-optional-advanced) runs separately on your own GPU rather than on any of these Claude roles; its models are configured in `Game/local-models.json`.

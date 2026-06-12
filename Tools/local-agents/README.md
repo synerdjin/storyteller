@@ -29,10 +29,12 @@ triage onto a local model.
    `Game/local-models.json`):
    ```bash
    ollama pull nomic-embed-text          # embeddings (~0.3 GB)
-   ollama pull qwen2.5:14b-instruct      # plot/critic scribe (~9 GB at Q4)
+   ollama pull qwen3:14b                  # plot/critic scribe (~9 GB at Q4)
    ```
-   On a 12 GB 4070 these coexist comfortably. If VRAM is tight, swap the LLM for
-   `llama3.1:8b` in `Game/local-models.json`. Prefer a different embedder?
+   On a 12 GB 4070 these coexist comfortably (verified: ~9.3 GB model + 0.3 GB
+   embedder, ~60 tok/s warm). Qwen3-14B is the current pick for structured
+   scribing — strong, reliable JSON/tool output. If VRAM is tight, swap the LLM
+   for `llama3.1:8b` in `Game/local-models.json`. Prefer a different embedder?
    `bge-m3` or `mxbai-embed-large` also work — just `ollama pull` it and set
    `embed_model`.
 
