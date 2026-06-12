@@ -38,6 +38,11 @@ try:
 except Exception:  # pragma: no cover
     local_client = None
 
+try:
+    import social  # information propagation over the relationship graph
+except Exception:  # pragma: no cover
+    social = None
+
 # Default system prompts. Overridable by editing the matching files in
 # Tools/local-agents/ — those win if present.
 DEFAULT_PLOT_SYS = (
@@ -398,6 +403,7 @@ def run(root, dry_run=False, gen_fn=None, verbose=True):
             prompt, system=system, cfg=cfg, options={"temperature": 0.7})
 
     entries, escalations, failed = [], [], []
+    observations = []   # observable beats to propagate to the social graph
     for a in agents:
         context = ""
         if not dry_run:
@@ -426,6 +432,10 @@ def run(root, dry_run=False, gen_fn=None, verbose=True):
         entries.append(format_entry(day, a, plot, verdict))
         if verdict.get("needs_claude"):
             escalations.append(a["name"])
+        if (plot.get("surface") or "hidden") != "hidden":   # observable → propagates
+            observations.append({"participants": [a["name"]],
+                                 "headline": plot.get("headline", "something stirred"),
+                                 "day": day})
 
     # Resolve each detected collision, and promote new ones to the plot registry.
     plot_entries, promoted = [], []
@@ -456,6 +466,11 @@ def run(root, dry_run=False, gen_fn=None, verbose=True):
         entries.append(format_interaction_entry(day, ix, plot, verdict, arc))
         if verdict.get("needs_claude"):
             escalations.append(ix["title"])
+        if (plot.get("surface") or "hidden") != "hidden":
+            observations.append({
+                "participants": [n for n, _ in ix.get("participants", [])],
+                "headline": plot.get("headline", "a clash broke out"),
+                "day": day})
         if arc not in known_ids:                       # one plot per collision, ever
             known_ids.add(arc)
             plot_entries.append(build_plot_entry(ix, plot, arc, day))
@@ -470,8 +485,18 @@ def run(root, dry_run=False, gen_fn=None, verbose=True):
         append_developments(root, entries)
     if plot_entries:
         append_plots(root, plot_entries)
+    propagated = 0
+    if social is not None and observations:
+        try:
+            propagated = social.propagate(root, observations)
+        except Exception as e:
+            if verbose:
+                print(f"(social propagation skipped: {e})")
     if verbose:
         print(f"Scribed {len(entries)} development(s) into Game/developments.md.")
+        if propagated:
+            print(f"Propagated {propagated} observation(s) into NPC memories "
+                  f"(who'd plausibly hear).")
         if promoted:
             print(f"Promoted {len(promoted)} new plot(s) into Game/plots.md: "
                   + ", ".join(promoted))

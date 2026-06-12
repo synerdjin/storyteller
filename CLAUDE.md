@@ -174,6 +174,12 @@ Promote an agent to living when the story leans on them — copy `Cast/_template
 ### Contested ledgers — the deterministic math under a collision
 When two agents reach for the same `target`, the metronome opens a **control ledger** for that entity in `Game/ledgers.md` (GM-only, tool-owned) and shifts leverage points toward the higher-pressure claimant by a *fixed rule* — pressure = resources + mood + salience, no model, no randomness. This is `dice.py` fairness applied to politics: a rival losing for five ticks sits visibly at 1/10, the holder entrenched at 8/10, and the ledger's `phase` (forming → rising → climax) drives the plot's arc. The number is decided by the tool; the scribe/director only ever **narrates what it means** — never changes it. (Borrowed from `the_city`'s `CommonsResource`: numeric shared state captured deterministically, never via an LLM.) The ledger is secret — never shown to the Player, never handed to an actor.
 
+### Social topology — who learns what, who stands where
+The relationship graphs in every `drives.md` together *are* a social network, and `Tools/social.py` reads it to spread information realistically instead of letting everyone magically know everything (the `the_city` `SocialConfig` idea):
+- **Propagation.** When the scribe writes an *observable* development (`Surface: now/soon`, never a hidden secret), it reaches the NPCs within ~2 hops of a participant on the graph, and an **actor-safe** observation is appended to each one's `memory.md` "What I've learned about others." A hub hears everything; an `isolated` NPC hears nothing. Deterministic — the graph decides *who learns*; only the visible move is recorded, never the hidden cause.
+- **Groups.** A `group:` id on the agent block marks a faction/clique: same-group agents default **allied** (don't collide over a shared target) and hear each other's news one hop further.
+- **Reputation.** A *derived* standing (`social.reputation`) = control held across the ledgers + salience — so it's always consistent with the deterministic world state and needs no separate file. A GM-only signal you can lean on when an NPC sizes up another.
+
 ### Ticking the world (the per-post loop)
 **Run a tick after each in-character post** — this is step 6 of the play loop, the world's heartbeat. The local scribe makes it cheap enough to do every time:
 

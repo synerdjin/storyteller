@@ -5,6 +5,7 @@ goal: { pursue: control, target: harbor-council, success: "holds the swing vote 
 clock: { filled: 0, total: 6 }
 advances_when: dawdle
 salience: 3
+group: camarilla
 resources: { influence: 3, muscle: 1, coin: 2, secrets: 4 }
 mood: { confidence: 3, desperation: 1 }
 relationships:
@@ -32,6 +33,7 @@ The metronome parses *only* the front-matter above. Keep it to this shape — in
 - **`clock`** — a progress clock `{ filled: N, total: M }`. The metronome fills it; the director may reset or resize it.
 - **`advances_when`** — when the clock ticks: `always` (every tick, by elapsed time) · `dawdle` (only when the Player stalls) · `on_fail` (only when a roll fails forward) · `manual` (only the director moves it).
 - **`salience`** — 1–5. How loudly they press on the story; raises their priority when the metronome picks who gets attention this tick.
+- **`group`** — *optional* — a faction/clique id (e.g. `camarilla`, `pack-zero`). Same-group agents default **allied** (they don't collide over a shared target) and hear each other's news one hop further on the social graph (see `CLAUDE.md` → "Social topology"). Omit for an unaligned loner.
 - **`states`** — the FSM. Each `node: { to: <next>, when: <guard> }`. Guards understood: `always`, `clock_full`, or `clock <op> N` (`>=`, `>`, `<=`, `<`, `==`, `!=`). Anything else never fires (fail-safe). One transition per tick at most.
 
 **The agent model (what makes plots *emerge*):**

@@ -372,8 +372,16 @@ def _weight(edge):
     return w if isinstance(w, int) else 0
 
 
+def _group(agent):
+    g = agent.fields.get("group")
+    return str(g).strip() if g not in (None, "") else None
+
+
 def _allied(a, b):
-    """True if a and b share a positive bond in either direction."""
+    """True if a and b share a positive bond, or belong to the same group."""
+    ga, gb = _group(a), _group(b)
+    if ga is not None and ga == gb:
+        return True
     for x, y in ((a, b), (b, a)):
         e = _rels(x).get(y.name)
         if isinstance(e, dict) and e.get("tie") in _ALLY_TIES and _weight(e) > 0:
@@ -907,6 +915,14 @@ def _self_test():
     assert ("contested-goal", ("mara", "vance")) in kinds, "rivals over one target collide"
     assert ("contested-goal", ("bryce", "mara")) not in kinds, "allies don't collide"
     assert ("player-pressure", ("hunter", "player")) in kinds, "goal at player → pressure"
+
+    # group-mates default allied: same group + same target must NOT collide.
+    g1 = _mk("g1", "living: true\nstate: s\ngroup: camarilla\n"
+                   "goal: { pursue: control, target: court }\n")
+    g2 = _mk("g2", "living: true\nstate: s\ngroup: camarilla\n"
+                   "goal: { pursue: control, target: court }\n")
+    assert not any(i.kind == "contested-goal" for i in detect_interactions([g1, g2])), \
+        "same-group agents over one target are allied, not colliding"
     mv = next(i for i in ix if i.kind == "contested-goal" and {i.a.name, i.b.name} == {"mara", "vance"})
     assert "mara better-resourced" in mv.hint, "resource advantage hint (6 vs 3)"
 

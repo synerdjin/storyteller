@@ -11,6 +11,23 @@ Version numbers are `MAJOR.MINOR.PATCH`:
 
 ---
 
+## 2.4.0 — 2026-06-12
+
+### Added — social topology & information propagation
+The second of the three planned generative-agents subsystems. The relationship graphs in every `drives.md` already *form* a social network; now the world reads it so information spreads **asymmetrically** — an NPC learns of an off-screen event only if they're socially close to it, instead of everyone magically knowing everything. Ported in spirit from [`the_city`](https://github.com/synerdjin/the_city)'s `SocialConfig` (network_structure / reputation / groups).
+
+- **New `Tools/social.py`** (dependency-free, reuses `world_tick.discover_agents`):
+  - **Propagation** — `propagate()` takes the tick's *observable* developments and appends an **actor-safe** observation to the `memory.md` ("What I've learned about others") of every NPC within ~2 hops of a participant on the relationship graph. Deterministic BFS decides *who learns*; the note carries only the visible move, never a hidden secret. Idempotent.
+  - **Groups** — a `group:` id on the agent block; same-group agents hear news one hop further.
+  - **Reputation** — a *derived* standing (control held across `ledgers.md` + salience), so it never drifts from the deterministic world state and needs no store.
+  - CLI `--graph` / `--self-test`.
+- **`world_scribe.py`** runs propagation after writing developments (only non-hidden beats), reporting how many observations it seeded; defensive import keeps it optional.
+- **`world_tick.py`** — `_allied` now treats **same-group** agents as allied, so faction-mates don't collide over a shared target. New optional `group:` field documented in `Cast/_template/drives.md`.
+- **`CLAUDE.md`** documents "Social topology" in The living world; `UPDATING.md` registers `Tools/social.py`.
+
+### Campaign migration
+- **Optional, automatic.** Propagation runs whenever the local scribe writes an observable development and the involved NPCs have `memory.md` files (they do, from the template). Add a `group:` to a few NPCs' `drives.md` to enable in-group dynamics; nothing else to set up.
+
 ## 2.3.0 — 2026-06-12
 
 ### Added — deterministic control ledgers (contested-entity shared state)
