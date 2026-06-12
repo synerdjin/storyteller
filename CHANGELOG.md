@@ -11,6 +11,23 @@ Version numbers are `MAJOR.MINOR.PATCH`:
 
 ---
 
+## 2.1.0 — 2026-06-12
+
+### Added — the living-world story engine
+The engine becomes a **living-world story engine**: the Player is now **one protagonist among many**, the world's other characters pursue their own goals and **collide with each other**, and **plots emerge** from those collisions rather than from a pre-scripted outline. The world ticks on **every in-character post** (the local model is the per-post workhorse), and the whole chronicle can be archived as **fan-fiction** — mechanics hidden, prose chaptered. Backward-compatible: a campaign with no living agents still plays exactly as before, and old-shape `drives.md` files still parse.
+
+- **Full agent NPC model** — `Cast/_template/drives.md` gains a **targeted `goal`** (`{ pursue, target, success }`), a **`relationships`** graph (typed, weighted edges to other entities), **`resources`** (advantage pools), and **`mood`** (volatile tracks). Two agents aiming at the same `target` is the minimal unit of emergence. `Cast/_template/memory.md` adds a *"What I've learned about others"* observation section; `Cast/CRAFTING-NPCS.md` is rewritten around emergence with a worked collision example.
+- **Interaction/emergence engine** — `Tools/world_tick.py` stays deterministic and auditable but now **detects collisions** (contested-goal, rivalry, player-pressure) from the agent graph and writes them to a `## Interactions` queue section with a resource *advantage hint* (a hint, never a verdict). The parser handles the new fields unchanged.
+- **Master plot registry** — new **`Game/plots.md`** tracks every plot (the Player's and the emergent ones) with state and `Player involvement` (unaware → participating); `Game/threads.md` is demoted to the **player-known view** derived from it.
+- **Per-post local loop** — `Tools/world_scribe.py` gains an **interaction resolver**: it resolves collisions on the local model and **promotes hardened ones into `Game/plots.md`** (idempotently), escalating only pivotal beats to the Opus `world-director`.
+- **Fan-fiction output** — new **`Story/`** tree (`index.md` front page, `chapters/NNNN-slug.md`, `compiled.md`), a new **`chapter-renderer`** subagent (Opus, secret-aware but governed by a strict **spoiler rule** for *meanwhile* chapters), and `Tools/story_compile.py` to export. `Tools/dice.py` gains **`-q/--quiet`** for resolve-then-narrate: the dice resolve off-page, the prose carries only the result.
+- **`CLAUDE.md`** reframed: the ensemble + living-world prime directives, the per-post tick as step 6 of the play loop, the **resolve-then-narrate** dice contract (mechanics off the page, fairness on the record), the living world promoted from optional to core, and a new *"Rendering the story"* section.
+- **Subagents:** `campaign-architect` now seeds a **connected living cast** (5–8 NPCs whose goals already collide) plus `plots.md`; `world-director` resolves `## Interactions` and maintains `plots.md`. Firewall preserved: `memory_index.py` classifies `plots.md` (and the enriched `drives.md`) as **secret**, never `--scope public`.
+
+### Campaign migration
+- **Optional, additive.** Existing campaigns keep working untouched. To light up the living world in an in-progress game, ask the GM to: promote a few NPCs by enriching their `drives.md` to the new agent model (targeted goals + relationships that **collide**), create `Game/plots.md` (copy the blank from the engine) and seed it from your open threads, and — for fan-fiction output — render with the `chapter-renderer` into the new `Story/` tree. A local model is strongly recommended for the per-post cadence; without one, tick at scene cuts and let the `world-director` handle the queue.
+- **No save data is touched by the update** — `Game/*.md`, `Cast/<name>/`, `Character/`, `Sourcebooks/` are yours as always. `Game/plots.md` and `Story/` are scaffolds (your story), so the sync won't create them for you — ask the GM to set them up.
+
 ## 2.0.0 — 2026-06-07
 
 ### Changed — the engine is now a World of Darkness Storyteller

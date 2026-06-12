@@ -14,7 +14,7 @@ of truth, so the index is gitignored and can be regenerated any time.
 
 Every chunk is tagged with a VISIBILITY tier so retrieval can respect the
 engine's secret firewall:
-    secret  — gm-secrets, world-state, developments, secrets/drives/sheet
+    secret  — gm-secrets, world-state, developments, plots, secrets/drives/sheet
     gm      — GM working files (timeline, threads, current-scene, campaign)
     public  — actor-safe (profile, memory, world lore, PC backstory)
     player  — player-facing (PLAYER-NOTES, Story/ chapters)
@@ -92,6 +92,7 @@ def classify(rel):
             "gm-secrets.md": ("secret", "gm-secrets"),
             "world-state.md": ("secret", "world-state"),
             "developments.md": ("secret", "developments"),
+            "plots.md": ("secret", "plots"),       # master registry: hidden/unaware plots
             "world.md": ("public", "lore"),
             "campaign.md": ("gm", "campaign"),
             "threads.md": ("gm", "threads"),

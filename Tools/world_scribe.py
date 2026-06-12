@@ -109,6 +109,57 @@ def parse_queue(text):
     return [a for a in agents if a.get("source")]  # real agent sections only
 
 
+def parse_interactions(text):
+    """Parse the '## Interactions' section of the queue into interaction dicts.
+
+    Agent sections use '## name'; interaction entries use '### a vs b' nested under
+    a single '## Interactions' heading, so they never collide with `parse_queue`.
+    """
+    lines = text.splitlines()
+    start = None
+    for i, ln in enumerate(lines):
+        if re.match(r"^##\s+Interactions\s*$", ln):
+            start = i + 1
+            break
+    if start is None:
+        return []
+    end = len(lines)
+    for i in range(start, len(lines)):
+        # the section ends at the next level-2 heading ('## ', not '### ')
+        if re.match(r"^##\s+\S", lines[i]) and not lines[i].startswith("###"):
+            end = i
+            break
+    items, cur = [], None
+    for ln in lines[start:end]:
+        h = re.match(r"^###\s+(.*\S)\s*$", ln)
+        if h:
+            if cur:
+                items.append(cur)
+            cur = {"title": h.group(1).strip(), "kind": None, "over": None,
+                   "participants": [], "why": None, "hint": None}
+            m = re.search(r"over\s+`([^`]+)`", cur["title"])
+            if m:
+                cur["over"] = m.group(1)
+            continue
+        if cur is None:
+            continue
+        b = ln.strip()
+        if b.startswith("- Kind:"):
+            cur["kind"] = b[len("- Kind:"):].strip()
+        elif b.startswith("- Participants:"):
+            cur["participants"] = re.findall(r"([A-Za-z0-9_\-]+)\s*\(`([^`]+)`\)", b)
+        elif b.startswith("- Why:"):
+            cur["why"] = b[len("- Why:"):].strip()
+        elif b.startswith("- Advantage hint:"):
+            cur["hint"] = b[len("- Advantage hint:"):].strip()
+    if cur:
+        items.append(cur)
+    for it in items:
+        if it.get("kind") == "player-pressure" and not it.get("over"):
+            it["over"] = "player"
+    return [it for it in items if it.get("kind")]
+
+
 def plot_prompt(agent, context):
     return (
         f"An off-screen agent just moved. Write what they actually did.\n\n"
@@ -124,6 +175,31 @@ def plot_prompt(agent, context):
         f'{{"headline": "<=8 words", "what_happened": "2-3 sentences, concrete, '
         f'past tense", "surface": "now|soon|hidden", "trigger": "<if soon: what '
         f'reveals it, else empty>", "arc": "<short arc id, or the agent name>"}}'
+    )
+
+
+def interaction_prompt(ix, context):
+    names = ", ".join(n for n, _ in ix["participants"]) or ix["title"]
+    over = ix.get("over") or "their aims"
+    over = "the Player" if over == "player" else over
+    return (
+        f"Two forces in the living world just collided off-screen. Resolve what "
+        f"actually happens between them this tick — honestly, in character, with no "
+        f"fabricated dice and NO predetermined winner.\n\n"
+        f"PARTIES: {names}\n"
+        f"KIND: {ix['kind']}\n"
+        f"CONTESTED: {over}\n"
+        f"WHY THEY COLLIDED: {ix.get('why')}\n"
+        f"ADVANTAGE HINT (a hint from resources, NOT a verdict): {ix.get('hint') or 'none'}\n\n"
+        f"RELEVANT CAMPAIGN CONTEXT (retrieved — do not contradict it):\n"
+        f"{context or '(none retrieved)'}\n\n"
+        f"Decide the single most consequential thing that happens between them now, "
+        f"consistent with the context and each party's nature. Do not resolve a planned "
+        f"reveal or a secret's payoff — only the visible move. Return ONLY this JSON:\n"
+        f'{{"headline": "<=8 words", "what_happened": "2-3 sentences, concrete, past '
+        f'tense", "surface": "now|soon|hidden", "trigger": "<if soon: what reveals it, '
+        f'else empty>", "stakes": "<one line: what each side stands to win or lose>", '
+        f'"state": "forming|rising|climax"}}'
     )
 
 
@@ -209,14 +285,100 @@ def append_developments(root, entries):
     p.write_text(text, encoding="utf-8")
 
 
+def _slug(s):
+    return re.sub(r"[^a-z0-9]+", "-", str(s).lower()).strip("-") or "plot"
+
+
+def interaction_plot_id(ix):
+    """A stable id for the plot a collision belongs to, so it isn't re-created each tick."""
+    names = sorted(n for n, _ in ix.get("participants", []))
+    base = "-".join(names) if names else _slug(ix.get("title", "plot"))
+    over = ix.get("over")
+    if over and over != "player":
+        base += "-" + _slug(over)
+    return _slug(base)
+
+
+def existing_plot_ids(root):
+    p = Path(root) / "Game" / "plots.md"
+    if not p.exists():
+        return set()
+    return set(re.findall(r"^###\s+(\S+)\s+—", p.read_text(encoding="utf-8"), re.M))
+
+
+def format_interaction_entry(day, ix, plot, verdict, arc):
+    dl = f"Day {day}" if day is not None else "Day ?"
+    headline = plot.get("headline") or "(off-screen clash)"
+    lines = [
+        f"## [{dl}] — {ix['title']}: {headline}",
+        f"- {(plot.get('what_happened') or '').strip()}",
+    ]
+    surface = plot.get("surface") or "hidden"
+    if surface == "soon" and plot.get("trigger"):
+        lines.append(f"- Surface: soon (trigger: {plot['trigger']})")
+    else:
+        lines.append(f"- Surface: {surface}")
+    lines.append(f"- Arc: {arc}")
+    lines.append(
+        f"- Critic: salience {verdict.get('salience')}, "
+        f"prose-worthy {verdict.get('prose_worthy')}, "
+        f"needs-Claude {verdict.get('needs_claude')} — {verdict.get('reason', '')}")
+    if verdict.get("needs_claude"):
+        lines.append("- Escalate: claude (run the world-director on this clash)")
+    lines.append("- Drained: no")
+    return "\n".join(lines)
+
+
+def build_plot_entry(ix, plot, arc, day):
+    title = plot.get("headline") or ix["title"]
+    parts = ", ".join(n for n, _ in ix.get("participants", [])) or ix["title"]
+    surface = plot.get("surface") or "hidden"
+    involvement = ("aware" if ix.get("kind") == "player-pressure" and surface == "now"
+                   else "unaware")
+    surf = (f"soon (trigger: {plot['trigger']})"
+            if surface == "soon" and plot.get("trigger") else surface)
+    dl = f"Day {day}" if day is not None else "Day ?"
+    return "\n".join([
+        f"### {arc} — {title}",
+        f"- Participants: {parts}",
+        f"- Stakes: {plot.get('stakes', '(emerging)')}",
+        f"- State: {plot.get('state', 'forming')}",
+        "- Clock: 0/4",
+        f"- Player involvement: {involvement}",
+        f"- Surface: {surf}",
+        f"- Arc: {arc}",
+        f"- Opened: {dl}",
+    ])
+
+
+def append_plots(root, plot_entries):
+    """Insert new '### ' plot entries under the '## World plots' heading."""
+    p = Path(root) / "Game" / "plots.md"
+    if not p.exists() or not plot_entries:
+        return
+    text = p.read_text(encoding="utf-8")
+    if "## World plots" not in text:
+        return
+    idx = text.index("## World plots")
+    nl = text.index("\n", idx)
+    head, rest = text[:nl + 1], text[nl + 1:]
+    # the placeholder bullet may carry an italic '*(...)*' note across the line
+    rest = re.sub(r"^\s*-\s*\*\(none yet.*?\)\*\s*\n", "", rest, count=1, flags=re.S)
+    block = "\n\n".join(plot_entries).strip()
+    text = head + "\n" + block + "\n\n" + rest.lstrip("\n")
+    p.write_text(text, encoding="utf-8")
+
+
 def run(root, dry_run=False, gen_fn=None, verbose=True):
     root = Path(root)
     qpath = root / "Game" / ".world-tick-queue.md"
     if not qpath.exists():
         print("No world-tick queue. Run Tools/world_tick.py first.")
         return 1
-    agents = parse_queue(qpath.read_text(encoding="utf-8"))
-    if not agents:
+    qtext = qpath.read_text(encoding="utf-8")
+    agents = parse_queue(qtext)
+    interactions = parse_interactions(qtext)
+    if not agents and not interactions:
         print("Queue is empty — nothing to scribe.")
         return 0
 
@@ -260,20 +422,60 @@ def run(root, dry_run=False, gen_fn=None, verbose=True):
         if verdict.get("needs_claude"):
             escalations.append(a["name"])
 
+    # Resolve each detected collision, and promote new ones to the plot registry.
+    plot_entries, promoted = [], []
+    known_ids = existing_plot_ids(root)
+    for ix in interactions:
+        arc = interaction_plot_id(ix)
+        context = ""
+        if not dry_run:
+            try:
+                scored = memory_search.search_text(
+                    root, f"{ix['title']}: {ix.get('why') or ''}",
+                    scope="gm", k=6, cfg=cfg)
+                context = memory_search.format_results(scored, snippet=200)
+            except Exception as e:
+                context = f"(retrieval unavailable: {e})"
+        iprompt = interaction_prompt(ix, context)
+        if dry_run:
+            print(f"\n=== {ix['title']} — INTERACTION RESOLVER ===")
+            print(f"[system]\n{sys_plot}\n[user]\n{iprompt}")
+            continue
+        try:
+            plot = parse_json(gen_fn(sys_plot, iprompt))
+            cdict = {"name": ix["title"], "salience": "3"}
+            verdict = parse_json(gen_fn(sys_critic, critic_prompt(cdict, plot)))
+        except Exception as e:
+            failed.append((ix["title"], str(e)))
+            continue
+        entries.append(format_interaction_entry(day, ix, plot, verdict, arc))
+        if verdict.get("needs_claude"):
+            escalations.append(ix["title"])
+        if arc not in known_ids:                       # one plot per collision, ever
+            known_ids.add(arc)
+            plot_entries.append(build_plot_entry(ix, plot, arc, day))
+            promoted.append(arc)
+
     if dry_run:
-        print(f"\n(--dry-run: {len(agents)} agent(s); prompts above, nothing written.)")
+        print(f"\n(--dry-run: {len(agents)} agent(s), {len(interactions)} "
+              f"interaction(s); prompts above, nothing written.)")
         return 0
 
     if entries:
         append_developments(root, entries)
+    if plot_entries:
+        append_plots(root, plot_entries)
     if verbose:
         print(f"Scribed {len(entries)} development(s) into Game/developments.md.")
+        if promoted:
+            print(f"Promoted {len(promoted)} new plot(s) into Game/plots.md: "
+                  + ", ".join(promoted))
         if escalations:
             print("Escalate to Claude's world-director for pivotal beats: "
                   + ", ".join(escalations))
         for name, err in failed:
             print(f"Skipped {name}: local model output unusable ({err}). "
-                  f"Re-run the tick or scribe this agent via the world-director.")
+                  f"Re-run the tick or scribe this beat via the world-director.")
     return 1 if failed and not entries else 0
 
 
@@ -378,6 +580,66 @@ def _self_test():
         dev = (root / "Game" / "developments.md").read_text(encoding="utf-8")
         assert "Good opens a shop" in dev          # good agent survived
         assert "bad:" not in dev                    # bad agent skipped, not written
+
+    # --- interactions: parse the section, resolve a clash, promote a plot ---
+    q3 = (
+        "## mara\n- Source: `Cast/mara/drives.md`\n"
+        "- State: `scheming`  |  Clock: 1/6  |  Salience: 4\n- Goal: control harbor-council\n"
+        "- Why flagged: clock advanced to 1/6\n\n"
+        "## Interactions\n\n"
+        "### mara vs vance over `harbor-council`\n"
+        "- Kind: contested-goal\n"
+        "- Participants: mara (`Cast/mara/drives.md`), vance (`Cast/vance/drives.md`)\n"
+        "- Why: both reach for `harbor-council`; they are rival (-4)\n"
+        "- Advantage hint: mara better-resourced (secrets): mara 6 vs vance 3\n"
+        "- Resolver: decide what happens; promote to plots.md.\n"
+    )
+    ix = parse_interactions(q3)
+    assert len(ix) == 1, ix
+    assert ix[0]["kind"] == "contested-goal" and ix[0]["over"] == "harbor-council"
+    assert [n for n, _ in ix[0]["participants"]] == ["mara", "vance"]
+    assert interaction_plot_id(ix[0]) == "mara-vance-harbor-council"
+
+    def stub3(system, prompt):
+        if "Triage this" in prompt:
+            return ('{"salience": 4, "prose_worthy": true, '
+                    '"needs_claude": true, "reason": "major faction move"}')
+        if "collided off-screen" in prompt:        # interaction resolver
+            return ('{"headline": "Mara outflanks Vance", "what_happened": "Mara '
+                    'leaked a ledger to two councillors and Vance lost the votes he '
+                    'was counting on.", "surface": "now", "trigger": "", '
+                    '"stakes": "the swing vote on the harbor council", "state": "rising"}')
+        return ('{"headline": "Mara works the docks", "what_happened": "x.", '
+                '"surface": "hidden", "trigger": "", "arc": "mara"}')
+
+    with tempfile.TemporaryDirectory() as d:
+        root = Path(d)
+        (root / "Game").mkdir()
+        (root / "Game" / ".world-tick-queue.md").write_text(q3, encoding="utf-8")
+        (root / "Game" / "current-scene.md").write_text(
+            "**Day 14 — evening.** The Salt Quarter.\n", encoding="utf-8")
+        (root / "Game" / "developments.md").write_text(
+            "# Developments\n\n## Pending\n\n*(none yet)*\n", encoding="utf-8")
+        (root / "Game" / "plots.md").write_text(
+            "# Plots\n\n## World plots\n\n- *(none yet — seeded later.)*\n\n"
+            "## Resolved\n\n- *(none yet)*\n", encoding="utf-8")
+
+        rc = run(root, gen_fn=stub3, verbose=False)
+        assert rc == 0, rc
+        dev = (root / "Game" / "developments.md").read_text(encoding="utf-8")
+        assert "Mara outflanks Vance" in dev, dev          # clash scribed
+        assert "Escalate: claude" in dev                   # critic flagged pivotal
+        plots = (root / "Game" / "plots.md").read_text(encoding="utf-8")
+        assert "### mara-vance-harbor-council — Mara outflanks Vance" in plots, plots
+        assert "State: rising" in plots
+        assert "Participants: mara, vance" in plots
+        assert "*(none yet" not in plots.split("## Resolved")[0]  # placeholder gone
+
+        # Idempotent: the same collision next tick must NOT create a second plot.
+        (root / "Game" / ".world-tick-queue.md").write_text(q3, encoding="utf-8")
+        run(root, gen_fn=stub3, verbose=False)
+        plots2 = (root / "Game" / "plots.md").read_text(encoding="utf-8")
+        assert plots2.count("### mara-vance-harbor-council") == 1, "no duplicate plot"
 
     print("world_scribe self-test: OK")
     return 0
