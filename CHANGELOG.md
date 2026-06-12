@@ -11,6 +11,18 @@ Version numbers are `MAJOR.MINOR.PATCH`:
 
 ---
 
+## 2.2.0 — 2026-06-12
+
+### Added — calibratable NPC worldviews (cultural profiles)
+NPC *motivations* now rest on a **value substrate**, so a cast reasons from genuinely different worldviews instead of just different voices — which makes the emergent collisions of 2.1.0 feel inevitable rather than arbitrary. Adapted from the sibling research project [`the_city`](https://github.com/synerdjin/the_city) (a Concordia-based generative-agents framework): the pattern of turning numeric Hofstede / World Values Survey value dimensions into worldview text, ported as a dependency-free helper.
+
+- **New `Tools/cultural_profile.py`** — a pure function (no model call, no dependencies) from a numeric value profile to a worldview sentence, with illustrative, **calibratable** presets: generic anchors (`individualist`/`collectivist`/`egalitarian`/`hierarchical`) and World-of-Darkness faction outlooks (`camarilla`, `sabbat`, `anarch`, `technocratic`, `tradition-mage`, `garou-tribal`). CLI: `python Tools/cultural_profile.py --list` / `<preset> --name "<who>"`; `--self-test` included.
+- **Optional `## Worldview & values` section** in `Cast/_template/profile.md` (actor-safe — values are openly expressed), seeded from the tool.
+- **`Cast/CRAFTING-NPCS.md`** lever #1 now grounds the *want* in a worldview; **`campaign-architect`** assigns each seeded NPC a distinct outlook so the living cast differs by value, not just voice.
+
+### Campaign migration
+- **Optional, additive.** Nothing changes for existing NPCs. To deepen a living NPC, run `python Tools/cultural_profile.py <preset>` and fold the worldview sentence into their `profile.md`. The presets are starting points — calibrate the numbers (or write your own `CulturalProfile`) for your chronicle.
+
 ## 2.1.0 — 2026-06-12
 
 ### Added — the living-world story engine
