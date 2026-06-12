@@ -11,6 +11,20 @@ Version numbers are `MAJOR.MINOR.PATCH`:
 
 ---
 
+## 2.3.0 — 2026-06-12
+
+### Added — deterministic control ledgers (contested-entity shared state)
+Collision *detection* shipped in 2.1.0, but the *outcome* was decided fresh by the model each tick — so a recurring contest had no memory. Now every contested entity carries a **control ledger**: numeric shared state moved by a fixed rule, never by an LLM. Ported in spirit from [`the_city`](https://github.com/synerdjin/the_city)'s `CommonsResource` game-master component (numbers captured deterministically, a per-round ledger). This is the first of three planned generative-agents subsystems (ledger → social propagation → the full agent loop).
+
+- **New `Tools/ledger.py`** — owns `Game/ledgers.md` (GM-only, tool-owned). Each contested entity is a pool of control points; `apply_pressure` shifts them toward the higher-**pressure** claimant (pressure = resources + mood + salience), drawn from a neutral pool then from the weakest opponent. Deterministic and auditable — `dice.py`'s "be seen to be fair" applied to politics. Exposes `holder` and a `phase` (forming → rising → climax). Dependency-free, with `--show` and `--self-test`.
+- **`world_tick.py`** opens/advances a ledger for each contested target every tick and writes the standing + phase into the queue's `## Interactions` block. The metronome stays **fully deterministic** (no model, no randomness). Backward compatible: legacy string goals and ledger-less campaigns are unaffected; the ledger module is imported defensively.
+- **`world_scribe.py`** reads the ledger standing for a collision and is instructed to **narrate what the number means** — never to change it or invent a winner.
+- **Firewall:** `memory_index.py` classifies `Game/ledgers.md` as **secret** (never `--scope public`, never to an actor).
+- **`CLAUDE.md`** documents the ledger inside "The living world"; `UPDATING.md` registers `Tools/ledger.py` (engine) and `Game/ledgers.md` (scaffold).
+
+### Campaign migration
+- **Optional, automatic.** `Game/ledgers.md` is created by the tools the first time a collision over a shared target is detected — nothing to set up. To use it, just ensure contesting NPCs aim opposed goals at the same `target` id (as the agent model already encourages).
+
 ## 2.2.0 — 2026-06-12
 
 ### Added — calibratable NPC worldviews (cultural profiles)

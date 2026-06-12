@@ -171,6 +171,9 @@ A living agent's `drives.md` is no longer just a solo clock; it's a small **agen
 
 Promote an agent to living when the story leans on them — copy `Cast/_template/drives.md`, fill the block, set `living: true`. **Seed the *tension*, not just the agent:** to get emergent plots, point at least two agents' goals at the same target with opposed aims. For a **faction or world-level agent**, add the same block in `Game/world-state.md`. `drives.md` is GM-only — like `secrets.md` and `sheet.md`, **never** handed to the `npc-actor`.
 
+### Contested ledgers — the deterministic math under a collision
+When two agents reach for the same `target`, the metronome opens a **control ledger** for that entity in `Game/ledgers.md` (GM-only, tool-owned) and shifts leverage points toward the higher-pressure claimant by a *fixed rule* — pressure = resources + mood + salience, no model, no randomness. This is `dice.py` fairness applied to politics: a rival losing for five ticks sits visibly at 1/10, the holder entrenched at 8/10, and the ledger's `phase` (forming → rising → climax) drives the plot's arc. The number is decided by the tool; the scribe/director only ever **narrates what it means** — never changes it. (Borrowed from `the_city`'s `CommonsResource`: numeric shared state captured deterministically, never via an LLM.) The ledger is secret — never shown to the Player, never handed to an actor.
+
 ### Ticking the world (the per-post loop)
 **Run a tick after each in-character post** — this is step 6 of the play loop, the world's heartbeat. The local scribe makes it cheap enough to do every time:
 

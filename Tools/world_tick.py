@@ -50,6 +50,14 @@ import re
 import sys
 from pathlib import Path
 
+# Sibling module: the deterministic control ledger. Optional — if it can't be
+# imported (run from an odd cwd), the tick still works, just without ledgers.
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+try:
+    import ledger as ledger_mod
+except Exception:  # pragma: no cover
+    ledger_mod = None
+
 # --------------------------------------------------------------------------- #
 # A tiny, dependency-free parser for the controlled YAML subset above.
 # It is intentionally NOT a general YAML parser — it understands exactly the
@@ -411,6 +419,30 @@ def _sal(agent):
     return s if isinstance(s, int) else 1
 
 
+def _mood_total(agent):
+    m = agent.fields.get("mood")
+    return sum(v for v in m.values() if isinstance(v, int)) if isinstance(m, dict) else 0
+
+
+def _pressure(agent):
+    """How hard an agent can press a contest: resources + mood + salience.
+
+    Deterministic and auditable — the ledger uses this to decide who *gains*
+    control, never a model. (Mirrors `the_city`'s numbers-not-LLM discipline.)
+    """
+    res, _ = _resource_total(agent)
+    return float(res + _mood_total(agent) + _sal(agent))
+
+
+def _current_day(root):
+    p = Path(root) / "Game" / "current-scene.md"
+    if p.exists():
+        m = re.search(r"Day\s+(\d+)", p.read_text(encoding="utf-8"))
+        if m:
+            return int(m.group(1))
+    return None
+
+
 class Interaction:
     """A detected, unresolved point of contention between agents (or vs. player)."""
 
@@ -421,6 +453,8 @@ class Interaction:
         self.over = over      # the contested entity id (or "player")
         self.why = why
         self.hint = hint
+        self.standing = None  # filled by the ledger pass (contested-goal only)
+        self.phase = None
 
     def key(self):
         names = tuple(sorted([self.a.name, self.b.name if self.b else "player"]))
@@ -491,6 +525,49 @@ def detect_interactions(agents, max_n=0):
                  key=lambda it: (-it.heat()[0], -it.heat()[1], it.a.name,
                                  it.b.name if it.b else ""))
     return out[:max_n] if max_n else out
+
+
+def apply_ledgers(root, agents, interactions, dry_run):
+    """Advance the deterministic control ledger for each contested entity.
+
+    For every entity two or more agents are contesting this tick, move control
+    points toward the higher-pressure claimant by `ledger.apply_pressure` (fixed
+    rule, no model, no randomness — the metronome stays deterministic), then
+    annotate the matching interactions with the new standing/phase so the queue
+    (and the scribe) can narrate what the number means. Persists `ledgers.md`
+    unless this is a dry run. A no-op when the ledger module is unavailable.
+    """
+    if ledger_mod is None:
+        return
+    contested = {}      # entity -> {agent_name: pressure}
+    by_name = {a.name: a for a in agents}
+    for it in interactions:
+        if it.kind == "contested-goal" and it.over:
+            contested.setdefault(it.over, {})
+            for p in (it.a, it.b):
+                if p is not None:
+                    contested[it.over][p.name] = _pressure(p)
+    # also fold in any third-party claimants reaching for the same entity
+    for entity in list(contested):
+        for a in agents:
+            if goal_target(a) == entity:
+                contested[entity].setdefault(a.name, _pressure(a))
+    if not contested:
+        return
+
+    ledgers = ledger_mod.load_ledgers(root)
+    day = _current_day(root)
+    results = {}
+    for entity, pressures in contested.items():
+        led = ledger_mod.get_or_create(ledgers, entity)
+        results[entity] = ledger_mod.apply_pressure(led, pressures, day)
+    for it in interactions:
+        if it.kind == "contested-goal" and it.over in results:
+            r = results[it.over]
+            it.standing = r["standing"]
+            it.phase = r["phase"]
+    if not dry_run:
+        ledger_mod.save_ledgers(root, ledgers)
 
 
 # --------------------------------------------------------------------------- #
@@ -635,6 +712,10 @@ def write_queue(root, selected, interactions, args, dry_run):
             ]
             if it.hint:
                 lines.append(f"- Advantage hint: {it.hint}")
+            if it.standing:
+                lines.append(
+                    f"- Control ledger: {it.standing}  |  phase: {it.phase}  "
+                    "(deterministic — narrate what this number *means*, don't change it)")
             lines.append(
                 "- Resolver: decide what actually happens between them this tick, "
                 "in character and in the live game's idiom; promote it to "
@@ -663,6 +744,7 @@ def run(root, args):
     )
     selected = candidates[: args.max]
     interactions = detect_interactions(agents, args.max)
+    apply_ledgers(root, agents, interactions, args.dry_run)
     if not args.dry_run:
         write_back(agents)
     _, _ = write_queue(root, selected, interactions, args, args.dry_run)
@@ -841,6 +923,27 @@ def _self_test():
     # backward-compat: a legacy plain-string goal must never crash detection.
     legacy = _mk("old", 'living: true\nstate: s\ngoal: "a plain string goal"\n')
     assert detect_interactions([legacy]) == [], "string goals don't collide, don't crash"
+
+    # --- deterministic control ledger over a contested entity ---
+    if ledger_mod is not None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "Game").mkdir(parents=True)
+            (root / "Game" / "current-scene.md").write_text(
+                "**Day 5 — evening.** The harbor.\n", encoding="utf-8")
+            ixs = detect_interactions([mara, vance2])
+            apply_ledgers(root, [mara, vance2], ixs, dry_run=False)
+            mv2 = next(i for i in ixs if i.kind == "contested-goal")
+            assert mv2.standing and "holder: mara" in mv2.standing, mv2.standing
+            led = (root / "Game" / "ledgers.md").read_text(encoding="utf-8")
+            assert "## harbor-council" in led and "mara=" in led
+            # dry-run must NOT persist the ledger file
+            with tempfile.TemporaryDirectory() as d2:
+                root2 = Path(d2)
+                (root2 / "Game").mkdir(parents=True)
+                apply_ledgers(root2, [mara, vance2], detect_interactions([mara, vance2]),
+                              dry_run=True)
+                assert not (root2 / "Game" / "ledgers.md").exists(), "dry-run writes nothing"
 
     print("world_tick self-test: OK")
     return 0

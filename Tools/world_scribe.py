@@ -136,7 +136,7 @@ def parse_interactions(text):
             if cur:
                 items.append(cur)
             cur = {"title": h.group(1).strip(), "kind": None, "over": None,
-                   "participants": [], "why": None, "hint": None}
+                   "participants": [], "why": None, "hint": None, "ledger": None}
             m = re.search(r"over\s+`([^`]+)`", cur["title"])
             if m:
                 cur["over"] = m.group(1)
@@ -152,6 +152,8 @@ def parse_interactions(text):
             cur["why"] = b[len("- Why:"):].strip()
         elif b.startswith("- Advantage hint:"):
             cur["hint"] = b[len("- Advantage hint:"):].strip()
+        elif b.startswith("- Control ledger:"):
+            cur["ledger"] = b[len("- Control ledger:"):].strip()
     if cur:
         items.append(cur)
     for it in items:
@@ -190,7 +192,10 @@ def interaction_prompt(ix, context):
         f"KIND: {ix['kind']}\n"
         f"CONTESTED: {over}\n"
         f"WHY THEY COLLIDED: {ix.get('why')}\n"
-        f"ADVANTAGE HINT (a hint from resources, NOT a verdict): {ix.get('hint') or 'none'}\n\n"
+        f"ADVANTAGE HINT (a hint from resources, NOT a verdict): {ix.get('hint') or 'none'}\n"
+        f"CONTROL LEDGER (deterministic standing — the score is already decided; "
+        f"narrate what it *means*, do NOT contradict or change it): "
+        f"{ix.get('ledger') or 'none'}\n\n"
         f"RELEVANT CAMPAIGN CONTEXT (retrieved — do not contradict it):\n"
         f"{context or '(none retrieved)'}\n\n"
         f"Decide the single most consequential thing that happens between them now, "
@@ -592,12 +597,15 @@ def _self_test():
         "- Participants: mara (`Cast/mara/drives.md`), vance (`Cast/vance/drives.md`)\n"
         "- Why: both reach for `harbor-council`; they are rival (-4)\n"
         "- Advantage hint: mara better-resourced (secrets): mara 6 vs vance 3\n"
+        "- Control ledger: mara 6, vance 0, _neutral 4 (holder: mara)  |  phase: climax\n"
         "- Resolver: decide what happens; promote to plots.md.\n"
     )
     ix = parse_interactions(q3)
     assert len(ix) == 1, ix
     assert ix[0]["kind"] == "contested-goal" and ix[0]["over"] == "harbor-council"
     assert [n for n, _ in ix[0]["participants"]] == ["mara", "vance"]
+    assert ix[0]["ledger"] and "holder: mara" in ix[0]["ledger"]
+    assert "CONTROL LEDGER" in interaction_prompt(ix[0], "")     # fed to the resolver
     assert interaction_plot_id(ix[0]) == "mara-vance-harbor-council"
 
     def stub3(system, prompt):
