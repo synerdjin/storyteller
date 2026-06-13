@@ -11,6 +11,18 @@ Version numbers are `MAJOR.MINOR.PATCH`:
 
 ---
 
+## 2.6.0 — 2026-06-13
+
+### Added — three patterns harvested from the 2025 D&D-agents literature
+Two papers from the Concordia/generative-agents lineage — Sancheti et al., *Towards LLM-Agents That Play Dungeons & Dragons Using Iterative Prompting* (CEUR Vol-4097), and Vezhnevets et al., *Multi-Actor Generative AI as a Game Engine* (arXiv 2507.08892) — largely *validate* the engine's existing architecture (GM-as-reality-arbiter, grounded variables, witness-only propagation, the explicitly Dramatist director). This release adopts the three findings that were genuinely net-new, staying inside the engine's law: Claude is the brain, tools stay deterministic and dependency-free.
+
+- **Play mode — the engine's stance (the Evaluationist/Dramatist/Simulationist typology).** A new `## Play mode` block in `Game/system.md` and a matching section in `CLAUDE.md` name the engine's stance (Dramatist-on-a-Simulationist-substrate) and make it campaign-configurable. The dial **never changes the dice or tools** — only how the GM and `world-director` *interpret* the same deterministic state. `world-director.md` now reads and weights it; Session Zero settles it alongside tone.
+- **The NPC compliance loop (iterative prompting).** Paper 1's empirical finding — single-pass actors drift from context and go passively agreeable, and iterative prompting fixes it — ported two ways: `npc-actor.md` gains a silent three-test self-check (narrative compliance / in-character consistency / deliberate intent — the enemy is *sycophancy*, never a quiet or reserved line) with one revise pass, and `CLAUDE.md`'s NPC-voicing section gains a GM-side **compliance gate** that re-invokes the actor only when its line contradicts canon the blind actor couldn't see or goes genuinely non-responsive — with an explicit "quiet is not stalled" guard so restrained, subtext-heavy scenes are never re-prompted into pushiness.
+- **The drift self-eval harness.** New `Tools/world_health.py` (deterministic, dependency-free, reuses `world_tick.py`'s parser and agent discovery) turns the papers' three action categories into a periodic health audit: frozen agents, stalled clocks, a world too quiet to generate plot, stale threads, an un-drained `Surface: now` backlog. An optional local tone/compliance read (`Tools/local-agents/health-auditor.md`) degrades cleanly to "skipped" with no Ollama. Writes only the GM-only `Game/.world-health.md`; run it at session end (now in the "Ending a session" checklist).
+
+### Campaign migration
+- **Optional, automatic.** `Game/system.md` gains a `## Play mode` block — if yours predates this release it simply reads as "Dramatist (default)" until you set it; nothing breaks. `world_health.py` is additive and touches no save data. No action required.
+
 ## 2.5.0 — 2026-06-12
 
 ### Added — the agent loop (reflection + re-planning)
