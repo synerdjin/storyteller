@@ -32,7 +32,7 @@ Open the project and tell Claude:
 
 > **"Let's start a new game."**
 
-It'll walk you through **Session Zero** — agreeing on tone and any content limits, creating your character, and setting up the world (including a small **cast of NPCs whose goals already collide**, so the world starts moving from day one) — then drop you into your first scene.
+It'll walk you through **Session Zero** — agreeing on tone, any content limits, and the **play mode** (story-first, world-simulation, or challenge-forward — see below), creating your character, and setting up the world (including a small **cast of NPCs whose goals already collide**, so the world starts moving from day one) — then drop you into your first scene.
 
 To continue later, open the project and say **"Let's keep playing."** The GM picks up where you left off with a quick recap.
 
@@ -50,6 +50,10 @@ You're a co-author, not just a lead: you can steer the *kind* of story you want 
 ## How it works (under the hood)
 
 You don't need any of this to play — but if you're curious how the world stays alive and fair, here's the machine. The guiding principle throughout: **deterministic tools own the numbers; AI owns the prose.** The same way `dice.py` keeps a roll honest, a set of small, auditable Python tools decide *what is structurally true* in the world, and Claude only ever decides *what it means*.
+
+### The play mode — what kind of game this is
+
+Multi-character stories tend toward one of three flavors, and you pick one at Session Zero: **Dramatist** (story-first — the default, where the world is aimed at the best honest story), **Simulationist** (a world that behaves consistently and indifferently, surprises and all), or **Evaluationist** (challenge-forward, where stakes and costs bite harder). It's only an *interpretation* dial — it never changes the dice or the tools, just how the Storyteller and the world read the same honest outcomes. World of Darkness suits *Dramatist-on-a-simulation-substrate*, so that's the default; the others are leans you can ask for. Whatever content limits you set in `boundaries.md` always win over the mode.
 
 ### The living world, and its heartbeat
 
@@ -103,7 +107,7 @@ The local memory search enforces the same line (`--scope public` never returns G
 
 ### Keeping it all straight
 
-Continuity lives in files, not just in the AI's memory: the current scene, a day-stamped timeline, the cast's individual memories, the world and its factions. A simple **campaign-day counter** anchors time so the GM (and the characters it voices) can compute "how long ago" instead of guessing. Your own spoiler-free dashboard lives in `PLAYER-NOTES.md`.
+Continuity lives in files, not just in the AI's memory: the current scene, a day-stamped timeline, the cast's individual memories, the world and its factions. A simple **campaign-day counter** anchors time so the GM (and the characters it voices) can compute "how long ago" instead of guessing. Your own spoiler-free dashboard lives in `PLAYER-NOTES.md`. And because a solo world can quietly drift, a deterministic **health check** (`Tools/world_health.py`) audits it at save points — flagging a thread left dangling, an NPC who's gone still, or a beat the GM forgot to surface — so nothing important silently stalls.
 
 ---
 
@@ -116,7 +120,7 @@ Continuity lives in files, not just in the AI's memory: the current scene, a day
 | `Game/` | The living chronicle: `system.md` (which game is live), `world.md`, `timeline.md`, `current-scene.md`, the player-known `threads.md`, and the GM-only `plots.md`, `developments.md`, `ledgers.md`, `world-state.md`, `gm-secrets.md`. |
 | `Story/` | The chronicle rendered as **fan-fiction** — chapters, an index, and a compiled export. |
 | `Sourcebooks/` | Drop your own M20/V20/W20 rulebooks and lore here for the Storyteller to digest. |
-| `Tools/` | The deterministic engine: the dice roller, the world metronome (`world_tick.py`), the local scribe (`world_scribe.py`), control ledgers (`ledger.py`), social propagation (`social.py`), cultural profiles (`cultural_profile.py`), story compiler (`story_compile.py`), and the semantic-memory + local-compute layer. |
+| `Tools/` | The deterministic engine: the dice roller, the world metronome (`world_tick.py`), the local scribe (`world_scribe.py`), control ledgers (`ledger.py`), social propagation (`social.py`), the world-health drift audit (`world_health.py`), cultural profiles (`cultural_profile.py`), story compiler (`story_compile.py`), and the semantic-memory + local-compute layer. |
 | `.claude/agents/` | The GM's specialist subagents — campaign-architect, character-creator, world-director, npc-actor, chapter-renderer. |
 | `PLAYER-NOTES.md` | Your spoiler-free notebook — what you know, want, and are chasing. The GM keeps it current; you can park your own notes there too. |
 | `CLAUDE.md` | The GM's full operating manual (how it runs the game). |
