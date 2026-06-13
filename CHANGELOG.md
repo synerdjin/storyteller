@@ -11,6 +11,81 @@ Version numbers are `MAJOR.MINOR.PATCH`:
 
 ---
 
+## 2.5.0 — 2026-06-12
+
+### Added — the agent loop (reflection + re-planning)
+The third and capstone generative-agents subsystem. The pieces of the Concordia loop already existed but weren't *closed*: agents observed (memory) and retrieved (`memory_search`) but rarely **reflected**, and never **re-planned**. Now they do — so an NPC's behaviour changes in response to what they've learned and how a contest is going, integrating the ledger pressure (2.3) and the social observations (2.4).
+
+- **Reflect** — `world_tick.py` flags an agent for reflection when it completes an FSM phase or culminates a clock (deterministic trigger, no new state), in a new queue `## Reflection` section. `world_scribe.py` runs a local **reflection pass**: it retrieves the agent's own recent memory and synthesises 1–2 higher-level **beliefs**, appended to their `drives.md` Reflection notes. New overridable prompt `Tools/local-agents/reflector.md`.
+- **Plan** — `.claude/agents/world-director.md` gains a **re-planning** responsibility: when an agent has reflected or a control ledger swings hard (`phase: climax`), the director may change what they *want* — retarget the `goal`, resize the `clock`, flip a `relationships` edge — so rivals adapt instead of looping. Consequential and secret-aware, so it stays on Claude.
+- **`world_scribe.py`** parsing hardened: the `## Reflection` and `## Interactions` sections can no longer be mistaken for agent movers.
+- **`CLAUDE.md`** documents "The agent loop" (observe → retrieve → reflect → plan) in The living world; `Cast/_template/drives.md` Reflection-notes guidance updated.
+
+This completes the arc begun in 2.1: the living world is now a fair, legible **generative-agents social simulation** — agents with goals and values that collide over deterministic stakes, spread news along a social graph, and adapt their plans as they learn.
+
+### Campaign migration
+- **Optional, automatic.** Reflection runs locally whenever an agent completes a phase and has a `drives.md`; re-planning happens through the normal `world-director` escalation. Nothing to set up.
+
+## 2.4.0 — 2026-06-12
+
+### Added — social topology & information propagation
+The second of the three planned generative-agents subsystems. The relationship graphs in every `drives.md` already *form* a social network; now the world reads it so information spreads **asymmetrically** — an NPC learns of an off-screen event only if they're socially close to it, instead of everyone magically knowing everything. Ported in spirit from [`the_city`](https://github.com/synerdjin/the_city)'s `SocialConfig` (network_structure / reputation / groups).
+
+- **New `Tools/social.py`** (dependency-free, reuses `world_tick.discover_agents`):
+  - **Propagation** — `propagate()` takes the tick's *observable* developments and appends an **actor-safe** observation to the `memory.md` ("What I've learned about others") of every NPC within ~2 hops of a participant on the relationship graph. Deterministic BFS decides *who learns*; the note carries only the visible move, never a hidden secret. Idempotent.
+  - **Groups** — a `group:` id on the agent block; same-group agents hear news one hop further.
+  - **Reputation** — a *derived* standing (control held across `ledgers.md` + salience), so it never drifts from the deterministic world state and needs no store.
+  - CLI `--graph` / `--self-test`.
+- **`world_scribe.py`** runs propagation after writing developments (only non-hidden beats), reporting how many observations it seeded; defensive import keeps it optional.
+- **`world_tick.py`** — `_allied` now treats **same-group** agents as allied, so faction-mates don't collide over a shared target. New optional `group:` field documented in `Cast/_template/drives.md`.
+- **`CLAUDE.md`** documents "Social topology" in The living world; `UPDATING.md` registers `Tools/social.py`.
+
+### Campaign migration
+- **Optional, automatic.** Propagation runs whenever the local scribe writes an observable development and the involved NPCs have `memory.md` files (they do, from the template). Add a `group:` to a few NPCs' `drives.md` to enable in-group dynamics; nothing else to set up.
+
+## 2.3.0 — 2026-06-12
+
+### Added — deterministic control ledgers (contested-entity shared state)
+Collision *detection* shipped in 2.1.0, but the *outcome* was decided fresh by the model each tick — so a recurring contest had no memory. Now every contested entity carries a **control ledger**: numeric shared state moved by a fixed rule, never by an LLM. Ported in spirit from [`the_city`](https://github.com/synerdjin/the_city)'s `CommonsResource` game-master component (numbers captured deterministically, a per-round ledger). This is the first of three planned generative-agents subsystems (ledger → social propagation → the full agent loop).
+
+- **New `Tools/ledger.py`** — owns `Game/ledgers.md` (GM-only, tool-owned). Each contested entity is a pool of control points; `apply_pressure` shifts them toward the higher-**pressure** claimant (pressure = resources + mood + salience), drawn from a neutral pool then from the weakest opponent. Deterministic and auditable — `dice.py`'s "be seen to be fair" applied to politics. Exposes `holder` and a `phase` (forming → rising → climax). Dependency-free, with `--show` and `--self-test`.
+- **`world_tick.py`** opens/advances a ledger for each contested target every tick and writes the standing + phase into the queue's `## Interactions` block. The metronome stays **fully deterministic** (no model, no randomness). Backward compatible: legacy string goals and ledger-less campaigns are unaffected; the ledger module is imported defensively.
+- **`world_scribe.py`** reads the ledger standing for a collision and is instructed to **narrate what the number means** — never to change it or invent a winner.
+- **Firewall:** `memory_index.py` classifies `Game/ledgers.md` as **secret** (never `--scope public`, never to an actor).
+- **`CLAUDE.md`** documents the ledger inside "The living world"; `UPDATING.md` registers `Tools/ledger.py` (engine) and `Game/ledgers.md` (scaffold).
+
+### Campaign migration
+- **Optional, automatic.** `Game/ledgers.md` is created by the tools the first time a collision over a shared target is detected — nothing to set up. To use it, just ensure contesting NPCs aim opposed goals at the same `target` id (as the agent model already encourages).
+
+## 2.2.0 — 2026-06-12
+
+### Added — calibratable NPC worldviews (cultural profiles)
+NPC *motivations* now rest on a **value substrate**, so a cast reasons from genuinely different worldviews instead of just different voices — which makes the emergent collisions of 2.1.0 feel inevitable rather than arbitrary. Adapted from the sibling research project [`the_city`](https://github.com/synerdjin/the_city) (a Concordia-based generative-agents framework): the pattern of turning numeric Hofstede / World Values Survey value dimensions into worldview text, ported as a dependency-free helper.
+
+- **New `Tools/cultural_profile.py`** — a pure function (no model call, no dependencies) from a numeric value profile to a worldview sentence, with illustrative, **calibratable** presets: generic anchors (`individualist`/`collectivist`/`egalitarian`/`hierarchical`) and World-of-Darkness faction outlooks (`camarilla`, `sabbat`, `anarch`, `technocratic`, `tradition-mage`, `garou-tribal`). CLI: `python Tools/cultural_profile.py --list` / `<preset> --name "<who>"`; `--self-test` included.
+- **Optional `## Worldview & values` section** in `Cast/_template/profile.md` (actor-safe — values are openly expressed), seeded from the tool.
+- **`Cast/CRAFTING-NPCS.md`** lever #1 now grounds the *want* in a worldview; **`campaign-architect`** assigns each seeded NPC a distinct outlook so the living cast differs by value, not just voice.
+
+### Campaign migration
+- **Optional, additive.** Nothing changes for existing NPCs. To deepen a living NPC, run `python Tools/cultural_profile.py <preset>` and fold the worldview sentence into their `profile.md`. The presets are starting points — calibrate the numbers (or write your own `CulturalProfile`) for your chronicle.
+
+## 2.1.0 — 2026-06-12
+
+### Added — the living-world story engine
+The engine becomes a **living-world story engine**: the Player is now **one protagonist among many**, the world's other characters pursue their own goals and **collide with each other**, and **plots emerge** from those collisions rather than from a pre-scripted outline. The world ticks on **every in-character post** (the local model is the per-post workhorse), and the whole chronicle can be archived as **fan-fiction** — mechanics hidden, prose chaptered. Backward-compatible: a campaign with no living agents still plays exactly as before, and old-shape `drives.md` files still parse.
+
+- **Full agent NPC model** — `Cast/_template/drives.md` gains a **targeted `goal`** (`{ pursue, target, success }`), a **`relationships`** graph (typed, weighted edges to other entities), **`resources`** (advantage pools), and **`mood`** (volatile tracks). Two agents aiming at the same `target` is the minimal unit of emergence. `Cast/_template/memory.md` adds a *"What I've learned about others"* observation section; `Cast/CRAFTING-NPCS.md` is rewritten around emergence with a worked collision example.
+- **Interaction/emergence engine** — `Tools/world_tick.py` stays deterministic and auditable but now **detects collisions** (contested-goal, rivalry, player-pressure) from the agent graph and writes them to a `## Interactions` queue section with a resource *advantage hint* (a hint, never a verdict). The parser handles the new fields unchanged.
+- **Master plot registry** — new **`Game/plots.md`** tracks every plot (the Player's and the emergent ones) with state and `Player involvement` (unaware → participating); `Game/threads.md` is demoted to the **player-known view** derived from it.
+- **Per-post local loop** — `Tools/world_scribe.py` gains an **interaction resolver**: it resolves collisions on the local model and **promotes hardened ones into `Game/plots.md`** (idempotently), escalating only pivotal beats to the Opus `world-director`.
+- **Fan-fiction output** — new **`Story/`** tree (`index.md` front page, `chapters/NNNN-slug.md`, `compiled.md`), a new **`chapter-renderer`** subagent (Opus, secret-aware but governed by a strict **spoiler rule** for *meanwhile* chapters), and `Tools/story_compile.py` to export. `Tools/dice.py` gains **`-q/--quiet`** for resolve-then-narrate: the dice resolve off-page, the prose carries only the result.
+- **`CLAUDE.md`** reframed: the ensemble + living-world prime directives, the per-post tick as step 6 of the play loop, the **resolve-then-narrate** dice contract (mechanics off the page, fairness on the record), the living world promoted from optional to core, and a new *"Rendering the story"* section.
+- **Subagents:** `campaign-architect` now seeds a **connected living cast** (5–8 NPCs whose goals already collide) plus `plots.md`; `world-director` resolves `## Interactions` and maintains `plots.md`. Firewall preserved: `memory_index.py` classifies `plots.md` (and the enriched `drives.md`) as **secret**, never `--scope public`.
+
+### Campaign migration
+- **Optional, additive.** Existing campaigns keep working untouched. To light up the living world in an in-progress game, ask the GM to: promote a few NPCs by enriching their `drives.md` to the new agent model (targeted goals + relationships that **collide**), create `Game/plots.md` (copy the blank from the engine) and seed it from your open threads, and — for fan-fiction output — render with the `chapter-renderer` into the new `Story/` tree. A local model is strongly recommended for the per-post cadence; without one, tick at scene cuts and let the `world-director` handle the queue.
+- **No save data is touched by the update** — `Game/*.md`, `Cast/<name>/`, `Character/`, `Sourcebooks/` are yours as always. `Game/plots.md` and `Story/` are scaffolds (your story), so the sync won't create them for you — ask the GM to set them up.
+
 ## 2.0.0 — 2026-06-07
 
 ### Changed — the engine is now a World of Darkness Storyteller

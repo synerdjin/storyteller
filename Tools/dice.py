@@ -233,6 +233,31 @@ def format_storyteller(r, label="Storyteller"):
     return f"{header}\n{verdict}"
 
 
+def format_storyteller_quiet(r, label="Storyteller"):
+    """One terse GM-only line for the roll log (resolve-then-narrate mode).
+
+    The full `format_storyteller` block is the auditable form shown when the
+    Player asks "what did I roll?"; this compact line is what the GM keeps in a
+    GM-only log while the *prose* carries only the result. Mechanics off the
+    page, fairness on the record.
+    """
+    o = r["outcome"]
+    if o == "botch":
+        verdict = "BOTCH"
+    elif o == "failure":
+        verdict = "fail"
+    else:
+        verdict = f"{r['net']} net ({_DEGREES.get(r['net'], _PHENOMENAL)})"
+    flags = ""
+    if r["specialty"]:
+        flags += " spec"
+    if r["willpower"]:
+        flags += " +WP"
+    dice = " ".join(str(d) for d in r["rolls"])
+    return (f"{label} {len(r['rolls'])}d10 vs {r['difficulty']}{flags} -> "
+            f"{verdict} [{dice} | 1s:{r['ones']}]")
+
+
 def _run_storyteller(argv, prog, label, pool_help, with_rage=False):
     """Shared driver for every Storyteller-System game (M20 / V20 / W20).
 
@@ -258,6 +283,11 @@ def _run_storyteller(argv, prog, label, pool_help, with_rage=False):
         "-w", "--willpower", action="store_true",
         help="spend Willpower: one automatic success, cannot botch",
     )
+    parser.add_argument(
+        "-q", "--quiet", action="store_true",
+        help="terse one-line GM-only result (resolve-then-narrate: mechanics stay "
+             "off the prose page; show the full block only if the Player asks)",
+    )
     if with_rage:
         parser.add_argument(
             "-r", "--rage", type=int, default=0,
@@ -274,7 +304,10 @@ def _run_storyteller(argv, prog, label, pool_help, with_rage=False):
 
     rolls = roll_dice(ns.pool + rage, 10)
     result = resolve_storyteller_pool(rolls, difficulty, ns.specialty, ns.willpower)
-    print(format_storyteller(result, label))
+    if ns.quiet:
+        print(format_storyteller_quiet(result, label))
+    else:
+        print(format_storyteller(result, label))
     return 0
 
 
@@ -362,6 +395,11 @@ def _self_test():
     assert r["outcome"] == "failure"
     r = R([7, 8], 6, willpower=True)            # 2 successes + 1 auto = 3 net
     assert r["net"] == 3 and r["outcome"] == "success"
+
+    # Quiet (resolve-then-narrate) formatter: terse, but carries the verdict + dice.
+    q = format_storyteller_quiet(R([8, 5, 9, 2], 6), "M20")
+    assert "M20 4d10 vs 6" in q and "2 net (Moderate)" in q and "1s:0" in q
+    assert "BOTCH" in format_storyteller_quiet(R([1, 3, 4], 6), "V20")
 
     # Generic expression: parsing + modifier within bounds.
     line, total = roll_expression("3d6+2")
