@@ -1,5 +1,5 @@
 {
   "host": "http://localhost:11434",
-  "embed_model": "nomic-embed-text",
+  "embed_model": "bge-m3",
   "llm_model": "qwen3:14b"
 }

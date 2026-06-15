@@ -21,13 +21,19 @@ import os
 import sys
 from pathlib import Path
 
-# Built-in defaults. Tuned for an RTX 4070 (12 GB): the embedder is tiny and the
-# LLM is a 7-14B instruct model at 4-bit. Override per-campaign in
-# Game/local-models.json or via the env vars below.
+# Built-in defaults. Tuned for an RTX 4070 (12 GB). The ONLY model on the hot
+# path now is the embedder: it powers hybrid semantic retrieval (memory_*.py).
+# The generative local tier (the qwen plot-scribe/critic/reflector) has been
+# RETIRED — routine world moves are templated deterministically (world_scribe.py)
+# and the rest escalates to Claude. `llm_model` is therefore OFF the per-post hot
+# path; it is used only by two OPTIONAL, low-frequency paths that both degrade
+# gracefully when no model is pulled: world_health.py's tone/compliance read, and
+# the deferred reranker seam (memory_search.maybe_rerank). Override per-campaign
+# in Game/local-models.json or via the env vars below.
 DEFAULTS = {
     "host": "http://localhost:11434",     # Ollama's default address
-    "embed_model": "nomic-embed-text",    # ~768-dim, <2 GB VRAM, fast
-    "llm_model": "qwen3:14b",             # plot/critic scribe (~9 GB at Q4)
+    "embed_model": "bge-m3",              # 1024-dim, MIT, strong hybrid retrieval (~1.2 GB)
+    "llm_model": "qwen3:14b",             # OFF the hot path — optional (world_health, reranker)
     "embed_timeout": 60,
     "llm_timeout": 300,
 }

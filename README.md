@@ -57,11 +57,11 @@ Multi-character stories tend toward one of three flavors, and you pick one at Se
 
 ### The living world, and its heartbeat
 
-The world is a cast of **living agents** — NPCs and factions that carry their own goals. After **each in-character post you make**, the engine ticks the world one beat. That tick is a deliberate three-layer split, so the world can't quietly advance only the convenient threats:
+The world is a cast of **living agents** — NPCs and factions that carry their own goals. After **each in-character post you make**, the engine ticks the world one beat. That tick is a deliberate split — one deterministic tool, then Claude only where judgment is needed — so the world can't quietly advance only the convenient threats:
 
 1. **The metronome — `Tools/world_tick.py`** (deterministic, no AI). It reads every living agent's state, advances their clocks by fixed rules, fires their state-machine transitions, and — the important part — **detects collisions**: two agents reaching for the same thing, a rivalry boiling over, someone moving on you. It writes a queue of who moved and where they clashed. It finds the conflict; it never decides who wins.
-2. **The scribe — `Tools/world_scribe.py`** (a small **local** model on your own GPU, run every post). For each mover and each collision it writes what happened, promotes a hardened collision into a real plot, and triages — flagging the pivotal beats for Claude.
-3. **The director — the `world-director` agent** (Claude, only for the flagged pivots). It resolves planned reveals, major faction turns, and anything turning on a hidden secret — honestly, using the dice or an oracle for genuinely uncertain outcomes.
+2. **The scribe — `Tools/world_scribe.py`** (deterministic, no model). For each routine mover it writes a true, abstract fact (it never invents an event or a power — so it can't drift), and prints a hand-off list of the collisions and reflections that need a Claude director.
+3. **The directors** — `world-director-lite` (Sonnet) resolves the everyday collisions, faction turns, and reflection; `world-director` (Opus) handles the pivots that turn on a hidden secret, a planned reveal, or your own arc — honestly, using the dice or an oracle for genuinely uncertain outcomes.
 
 Everything the world does is staged in `Game/developments.md` with a *surface* timing (now / soon / hidden); the Storyteller weaves the "now" items into your next scene.
 
@@ -89,7 +89,7 @@ The world doesn't let everyone magically know everything. The relationship graph
 Living agents run a full loop — **observe → retrieve → reflect → plan**:
 
 - they **observe** (events land in their memory) and **retrieve** the relevant bits before they act;
-- when they finish a phase of a scheme, they **reflect** — the local model distills their recent memory into a belief or two ("the council won't fall to patience alone"), written into their drives;
+- when they finish a phase of a scheme, they **reflect** — a Claude director distills their recent memory into a belief or two ("the council won't fall to patience alone"), written into their drives;
 - and on a new belief or a hard swing in a contest, the director lets them **re-plan** — retargeting a goal, resetting a clock, flipping a friend into an enemy. So rivals *adapt* instead of looping forever.
 
 ### The fan-fiction layer
@@ -120,8 +120,8 @@ Continuity lives in files, not just in the AI's memory: the current scene, a day
 | `Game/` | The living chronicle: `system.md` (which game is live), `world.md`, `timeline.md`, `current-scene.md`, the player-known `threads.md`, and the GM-only `plots.md`, `developments.md`, `ledgers.md`, `world-state.md`, `gm-secrets.md`. |
 | `Story/` | The chronicle rendered as **fan-fiction** — chapters, an index, and a compiled export. |
 | `Sourcebooks/` | Drop your own M20/V20/W20 rulebooks and lore here for the Storyteller to digest. |
-| `Tools/` | The deterministic engine: the dice roller, the world metronome (`world_tick.py`), the local scribe (`world_scribe.py`), control ledgers (`ledger.py`), social propagation (`social.py`), the world-health drift audit (`world_health.py`), cultural profiles (`cultural_profile.py`), story compiler (`story_compile.py`), and the semantic-memory + local-compute layer. |
-| `.claude/agents/` | The GM's specialist subagents — campaign-architect, character-creator, world-director, npc-actor, chapter-renderer. |
+| `Tools/` | The deterministic engine: the dice roller, the world metronome (`world_tick.py`), the deterministic world-scribe (`world_scribe.py`), control ledgers (`ledger.py`), social propagation (`social.py`), the world-health drift audit (`world_health.py`), cultural profiles (`cultural_profile.py`), story compiler (`story_compile.py`), and the hybrid semantic-memory layer. |
+| `.claude/agents/` | The GM's specialist subagents — campaign-architect, character-creator, world-director (Opus pivots), world-director-lite (Sonnet everyday), npc-actor, chapter-renderer. |
 | `PLAYER-NOTES.md` | Your spoiler-free notebook — what you know, want, and are chasing. The GM keeps it current; you can park your own notes there too. |
 | `CLAUDE.md` | The GM's full operating manual (how it runs the game). |
 
@@ -137,9 +137,9 @@ A gentle word: save points are for *stopping and resuming*, or for deliberately 
 
 ## The local-compute layer (recommended)
 
-Because the world ticks on **every** post, the engine leans on a small model running on your own machine to do the high-frequency bookkeeping — semantic memory search, scribing off-screen moves, resolving routine collisions, propagating news, reflecting agents — so Claude's budget goes to live play and the prose you actually read. A side benefit: your GM secrets never leave your machine.
+Because the world ticks on **every** post, the engine keeps Claude's budget for live play and the prose you actually read by pushing the high-frequency work elsewhere. Two parts: a small **embedding model** on your own machine powers the **hybrid semantic memory** (so the GM grounds facts in the record instead of re-reading whole files), and the routine off-screen world-moves are **templated deterministically** — no model at all, so they can never drift into inventing a power a character doesn't have. The collisions and reveals that need real judgment go to Claude. A side benefit: your GM secrets never leave your machine.
 
-If you have an NVIDIA GPU (a 12 GB card like an RTX 4070 is plenty), set it up via [Ollama](https://ollama.com) and [`Tools/local-agents/README.md`](Tools/local-agents/README.md). It's **optional and degrades gracefully** — with no local model present, the world simply ticks at scene cuts instead of every post and the `world-director` handles the whole queue. Correct, just costlier — so a local model is strongly recommended for this engine.
+If you have an NVIDIA GPU (a 12 GB card like an RTX 4070 is plenty), set up the embedder via [Ollama](https://ollama.com) and [`Tools/local-agents/README.md`](Tools/local-agents/README.md). It's **optional and degrades gracefully** — with no embedder present, memory search falls back to a model-free keyword (BM25) mode, and you can always read the markdown directly.
 
 ## Updating the engine
 
@@ -153,16 +153,18 @@ It saves a restore point, fetches the latest engine, and overwrites **only the s
 
 ## Models
 
-Each role runs on the model that fits how it's used. The one-time creative builders and the secret-aware world director use Opus; the constantly-running session and on-screen voicing use Sonnet (cheaper and faster); the per-post bookkeeping runs on your local model, not Claude at all.
+Each role runs on the model that fits how it's used. The one-time creative builders and the secret-bearing pivot director use Opus; the constantly-running session, on-screen voicing, and the everyday world director use Sonnet (cheaper and faster); the per-post routine bookkeeping is templated deterministically (no model), and semantic memory runs on a small local embedder.
 
 | Role | Model | Set in |
 |------|-------|--------|
 | Game Master (main session) | Sonnet | `.claude/settings.json` (project default) |
 | campaign-architect | Opus | `.claude/agents/campaign-architect.md` |
 | character-creator | Opus | `.claude/agents/character-creator.md` |
-| world-director (off-screen pivots) | Opus | `.claude/agents/world-director.md` |
+| world-director (secret-bearing pivots) | Opus | `.claude/agents/world-director.md` |
+| world-director-lite (everyday collisions/reflection) | Sonnet | `.claude/agents/world-director-lite.md` |
 | chapter-renderer (fan-fiction) | Opus | `.claude/agents/chapter-renderer.md` |
 | npc-actor (voicing a character) | Sonnet | `.claude/agents/npc-actor.md` |
-| the world scribe + memory (per post) | *local* | `Game/local-models.json` |
+| world-scribe (routine moves, per post) | *none — deterministic* | `Tools/world_scribe.py` |
+| semantic memory (hybrid retrieval) | *local embedder* | `Game/local-models.json` |
 
 To change any Claude role, edit the `model:` line in that agent's file (`opus` / `sonnet` / `haiku`). The Game Master is the session model — `.claude/settings.json` sets the default when you open the project, and you can switch any time with `/model`.
