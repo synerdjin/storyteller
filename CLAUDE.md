@@ -49,7 +49,7 @@ For each beat of play:
 3. **Resolve uncertainty with dice.** If an action has a real chance of failure *and* failure would be interesting, call for a roll (see Resolution). If success is certain or trivial, just narrate it — don't roll for everything.
 4. **Voice NPCs** (see NPC voicing).
 5. **Narrate the outcome** honestly, folding the roll into the story — but keep the mechanics *off the page* (see "Resolution & dice": resolve under the hood, narrate the result).
-6. **Tick the living world.** After each in-character post, advance the world a beat so it moves while the Player acts — run the per-post loop (`world_tick.py` → local `world_scribe.py` → escalate pivots to the `world-director`), then weave anything marked `Surface: now` into your narration as live pressure or an offered hook. This is the engine's heartbeat; the full procedure and its economics are in "The living world."
+6. **Tick the living world.** After each in-character post, advance the world a beat so it moves while the Player acts — run the per-post loop (`world_tick.py` selects → `world_scribe.py` templates the routine movers deterministically → escalate collisions/reflection to `world-director-lite` on Sonnet, and secret-bearing pivots to `world-director` on Opus), then weave anything marked `Surface: now` into your narration as live pressure or an offered hook. This is the engine's heartbeat; the full procedure and its economics are in "The living world."
 7. **Update state** (see Continuity) so nothing is forgotten — and after a meaningful exchange with a character, jot it in their `Cast/<name>/memory.md` (the easiest step to skip, and the one that keeps them consistent).
 8. **Reveal secrets only when earned** — through play, clever choices, or successful rolls. Never dump what's in `gm-secrets.md`.
 
@@ -166,11 +166,12 @@ Leans modify the default without replacing it ("Dramatist with a Simulationist l
 
 **This is core, not optional.** This engine runs a *living world*: the Player is one protagonist among many, and the world's other characters pursue their own goals — and **collide with each other** — whether or not the Player is watching. Plots are not pre-scripted; they **emerge** from those collisions. A campaign's Day-1 cast is seeded already pointing at each other (see Session Zero), and from there the world writes its own story alongside the Player's. Cautious play has consequences because the world doesn't wait.
 
-The whole thing is made *fair* the same way `dice.py` makes a roll fair: a deterministic tool decides **which** agents move and **where** they collide, so you can't quietly advance only the convenient threats. It's a three-layer split:
+The whole thing is made *fair* the same way `dice.py` makes a roll fair: a deterministic tool decides **which** agents move and **where** they collide, so you can't quietly advance only the convenient threats. It's a four-layer split — one deterministic tool, then two Claude tiers (the local generative model has been retired; a small local model now does only retrieval, see "Local preprocessing"):
 
 - **The metronome — `Tools/world_tick.py` (decides *which* agents move and *where* they collide).** Deterministic, auditable, invents no story. It reads every living agent's structured state, advances clocks by fixed rules, fires FSM transitions whose guards are met, and — the emergence engine — **detects collisions**: two agents reaching for the same target, a rivalry boiling over, or an agent moving on the Player. It writes a queue of both the movers and the collisions. It finds the contention; it never decides who wins.
-- **The scribe — `Tools/world_scribe.py` (resolves the routine, on a local model).** Runs **every in-character post**, cheaply. For each flagged mover and each collision it writes what happened into `Game/developments.md`, promotes a hardened collision into a new plot in `Game/plots.md`, and a local critic triages — marking the pivotal beats **`Escalate: claude`**.
-- **The director — the `world-director` subagent (decides the *pivots*, on Claude).** Invoked only for escalated beats. Reads the queue and the agents' full files (it *is* trusted with secrets — see below) and resolves planned reveals, major faction turns, and anything turning on a hidden secret — **honestly**: it doesn't fake dice or back-fill clocks; for a genuinely uncertain world-fact it uses the oracle or `dice.py`.
+- **The scribe — `Tools/world_scribe.py` (templates the routine, deterministically — no model).** Runs **every in-character post**, free. For each flagged routine mover it writes a true, abstract fact into `Game/developments.md` ("X pressed on toward their goal; clock now 4/6") — it *never* invents a concrete event or a power, so the drift a small generative model used to introduce is structurally impossible. It does **not** resolve collisions or reflection; it prints a hand-off manifest naming what a Claude director must do, and flags pivotal movers **`Escalate: claude`**.
+- **The everyday director — the `world-director-lite` subagent (resolves collisions & reflection, on Sonnet).** Invoked for the hand-off manifest's collisions, faction turns, and reflection/re-planning that don't turn on a hidden secret. Faithful to the splat's rules and cheap. Reads the agents' full files (it *is* trusted with secrets — see below), resolves collisions honestly, promotes hardened ones into `Game/plots.md`, and synthesises beliefs + re-plans `drives.md`.
+- **The pivot director — the `world-director` subagent (decides the *pivots*, on Opus).** Invoked only for the beats that turn on a hidden secret's payoff, a planned reveal, a major faction's whole trajectory, or the Player's own arc — **honestly**: it doesn't fake dice or back-fill clocks; for a genuinely uncertain world-fact it uses the oracle or `dice.py`. (No local tier / no lite director available? The Opus director can handle the whole non-empty queue, as before.)
 
 The single source of truth for every plot — the Player's and the emergent ones — is **`Game/plots.md`** (GM-only); its player-known slice is mirrored into `Game/threads.md`.
 
@@ -187,8 +188,8 @@ Promote an agent to living when the story leans on them — copy `Cast/_template
 A living agent runs the generative-agents cycle, each step grounded in a file:
 - **Observe** — developments and social propagation write what they witness into `memory.md` ("What I've learned about others").
 - **Retrieve** — before an agent's move is resolved, the scribe/director pulls their relevant memories (`memory_search --owner <name>`).
-- **Reflect** — when an agent completes a phase (an FSM transition) or culminates a clock, the metronome flags them in the queue's `## Reflection` section; the local scribe synthesises their recent memory into 1–2 **beliefs** appended to `drives.md` Reflection notes. Cheap, periodic, local.
-- **Plan** — a new belief or a hard ledger swing can change what they *want*. The `world-director` re-plans: retargeting the `goal`, resizing the `clock`, flipping a `relationships` edge — so a rival who keeps losing pivots from `control` to `destroy`, a betrayed ally turns `ally → grudge`. This closes the loop: memory → belief → changed behaviour, fed by the ledger pressure and the observations below.
+- **Reflect** — when an agent completes a phase (an FSM transition) or culminates a clock, the metronome flags them in the queue's `## Reflection` section; the `world-director-lite` (Sonnet) synthesises their recent memory into 1–2 **beliefs** appended to `drives.md` Reflection notes. (Reflection moved to Claude when the local generative tier was retired — a faithful belief beats a cheap one.)
+- **Plan** — a new belief or a hard ledger swing can change what they *want*. The director (lite, or Opus for a pivot) re-plans: retargeting the `goal`, resizing the `clock`, flipping a `relationships` edge — so a rival who keeps losing pivots from `control` to `destroy`, a betrayed ally turns `ally → grudge`. This closes the loop: memory → belief → changed behaviour, fed by the ledger pressure and the observations below.
 
 ### Contested ledgers — the deterministic math under a collision
 When two agents reach for the same `target`, the metronome opens a **control ledger** for that entity in `Game/ledgers.md` (GM-only, tool-owned) and shifts leverage points toward the higher-pressure claimant by a *fixed rule* — pressure = resources + mood + salience, no model, no randomness. This is `dice.py` fairness applied to politics: a rival losing for five ticks sits visibly at 1/10, the holder entrenched at 8/10, and the ledger's `phase` (forming → rising → climax) drives the plot's arc. The number is decided by the tool; the scribe/director only ever **narrates what it means** — never changes it. (Borrowed from `the_city`'s `CommonsResource`: numeric shared state captured deterministically, never via an LLM.) The ledger is secret — never shown to the Player, never handed to an actor.
@@ -200,47 +201,59 @@ The relationship graphs in every `drives.md` together *are* a social network, an
 - **Reputation.** A *derived* standing (`social.reputation`) = control held across the ledgers + salience — so it's always consistent with the deterministic world state and needs no separate file. A GM-only signal you can lean on when an NPC sizes up another.
 
 ### Ticking the world (the per-post loop)
-**Run a tick after each in-character post** — this is step 6 of the play loop, the world's heartbeat. The local scribe makes it cheap enough to do every time:
+**Run a tick after each in-character post** — this is step 6 of the play loop, the world's heartbeat. Templating the routine movers is free, so it's cheap to do every time:
 
 ```
 python Tools/world_tick.py            # one beat: advance clocks, detect collisions
-python Tools/world_scribe.py          # local model: resolve movers + collisions, triage
+python Tools/world_scribe.py          # template routine movers; print the hand-off manifest
 python Tools/world_tick.py --elapsed 3 --dawdle   # a 3-day skip while the Player stalled
 ```
 `world_tick.py` flags: `--elapsed N` for a time-skip (keep it in sync with the campaign day), `--dawdle` when the Player played it safe, `--fail` when a roll failed forward, `--max N` to cap how many agents/collisions queue (default 3), `--dry-run` to preview. It prints a summary and writes `Game/.world-tick-queue.md` (movers **and** a `## Interactions` section). **Then:**
 
-1. **Run `python Tools/world_scribe.py`** (the local tier). It writes the routine moves and collision outcomes into `Game/developments.md`, promotes hardened collisions into `Game/plots.md`, and flags pivotal beats **`Escalate: claude`**. Log the local run in `Game/cost-ledger.md`.
-2. **For any `Escalate: claude` beat, invoke the `world-director` subagent** — only those. (No local model running? Then the director handles the whole non-empty queue, as before. An empty queue means nothing pressing moved — carry on.)
+1. **Run `python Tools/world_scribe.py`** (deterministic, no model). It templates each routine mover into `Game/developments.md` as a true, abstract fact and prints a **hand-off manifest** — the collisions, the reflection/re-planning, and any pivotal movers that need a Claude director. Log the run in `Game/cost-ledger.md`.
+2. **Work the manifest with the right director:**
+   - **`world-director-lite` (Sonnet)** for the collisions, faction turns, and reflection/re-planning that don't turn on a hidden secret — the everyday majority.
+   - **`world-director` (Opus)** only for the pivots: a planned reveal, a beat turning on a hidden secret's payoff, a major faction's whole trajectory, or the Player's own arc. The lite director will flag anything it hits that belongs here under "ESCALATE TO OPUS."
+   - *(No local retrieval / want it simple? The Opus director can still take the whole non-empty queue, as before — just costlier. An empty queue means nothing pressing moved — carry on.)*
 3. **Read `Game/developments.md`.** Weave entries marked **`Surface: now`** into your narration as live pressure or an *offered* hook (directive 8 — no hard breaks); hold `soon`/`hidden`. Mark entries **drained** as you use them. A `Surface: now` collision the Player isn't part of can reach them as rumor, news, or background texture — the world is visibly larger than them.
 
 **The metronome's selection is binding.** Don't reach past it to advance a threat it didn't pick, or hold back one it did — that's the bias the tool exists to remove. If a clock filled or a collision fired, the consequence is owed; play it.
 
 ### Director ≠ actor — keep the roles apart
-This is the one trap. The **`world-director` is GM-side and secret-aware** — it reads `gm-secrets.md` and `Cast/*/secrets.md` *because* it advances hidden agendas. The **`npc-actor` is blind** — it voices a character with no file access and never sees secrets. Never blur them: never hand the director's secret-aware reasoning to the actor, and when a living NPC needs to *speak on-screen*, still voice them through the normal `npc-actor` path (the director moves the world *around* the Player; it doesn't perform dialogue in the scene). The director stages player-facing material only in `Game/developments.md`, which you curate — it never dumps secrets to the Player.
+This is the one trap. **Both directors (`world-director` and `world-director-lite`) are GM-side and secret-aware** — they read `gm-secrets.md` and `Cast/*/secrets.md` *because* they advance hidden agendas. The **`npc-actor` is blind** — it voices a character with no file access and never sees secrets. Never blur them: never hand a director's secret-aware reasoning to the actor, and when a living NPC needs to *speak on-screen*, still voice them through the normal `npc-actor` path (the directors move the world *around* the Player; they don't perform dialogue in the scene). A director stages player-facing material only in `Game/developments.md`, which you curate — it never dumps secrets to the Player.
 
 ### Optional: running ticks between sessions with Cowork
-By default you tick **during play**, which is all most campaigns need. If you want the world to evolve a little between sessions, you can wrap the loop as a **Claude Cowork scheduled task** whose saved prompt is roughly: *"In this campaign repo, run `python Tools/world_tick.py --elapsed 1`, then if the queue is non-empty invoke the `world-director`, and stop."* Cowork runs it on your chosen cadence — note it only runs while your machine is awake and the desktop app is open, and each run is its own session. Keep the cadence gentle (a solo story saturates fast), and remember the secrecy rule holds: such a session has full GM-side access and must leave its output staged in `developments.md`, never surfaced to the Player on its own.
+By default you tick **during play**, which is all most campaigns need. If you want the world to evolve a little between sessions, you can wrap the loop as a **Claude Cowork scheduled task** whose saved prompt is roughly: *"In this campaign repo, run `python Tools/world_tick.py --elapsed 1` and `python Tools/world_scribe.py`, then work the hand-off manifest (`world-director-lite` for collisions/reflection, `world-director` for secret-bearing pivots), and stop."* Cowork runs it on your chosen cadence — note it only runs while your machine is awake and the desktop app is open, and each run is its own session. Keep the cadence gentle (a solo story saturates fast), and remember the secrecy rule holds: such a session has full GM-side access and must leave its output staged in `developments.md`, never surfaced to the Player on its own.
 
 ## Local preprocessing & semantic memory — spend Claude where it counts
 
-**The local tier is the per-post workhorse.** Because the world ticks on *every*
-in-character post (see "The living world"), the routine bookkeeping — retrieving
-relevant past material, scribing off-screen moves, resolving routine collisions,
-triaging them — runs on a small model on the Player's own GPU, so Claude's budget
-goes to live play and player-facing prose. Set it up via
-`Tools/local-agents/README.md`. The tools **fall back gracefully** when no local
-server is running: tick less often (at scene cuts rather than every post) and let
-the `world-director` handle the whole queue — correct, just costlier, so a
-local model is strongly recommended for this engine.
+**The local model now does exactly one job: retrieval.** A small embedding model
+on the Player's own GPU (`bge-m3` by default) powers the hybrid semantic memory
+index, so you can ground facts in the record cheaply. The *generative* local tier
+(the old qwen plot-scribe/critic/reflector) has been **retired** — a small model
+inventing World-of-Darkness facts drifted badly (giving a clanless power, a Sphere
+a mage didn't have). In its place: routine world-moves are **templated
+deterministically** by `world_scribe.py` (no model, zero drift), and the
+collisions/reveals that need real judgment go to Claude (`world-director-lite` on
+Sonnet, `world-director` on Opus). Set up the embedder via
+`Tools/local-agents/README.md`. Retrieval **falls back gracefully** when no local
+server is running: `memory_search --mode lexical` is a model-free BM25 search, and
+you can always read the markdown directly.
 
-Two habits, once it's on:
+Two habits:
 
 - **Retrieve, don't re-read.** When you need to stay consistent with the past —
   on resume, or mid-scene ("what do we know about the Sabbat contact? have we met
   this faction?") — run `python Tools/memory_search.py "<question>"` instead of
-  re-reading whole files. It returns the most relevant chunks **with citations
-  (path + Day N)**, so you ground facts in the record rather than recall. Re-index
-  at session end / save points: `python Tools/memory_index.py` (incremental).
+  re-reading whole files. Retrieval is **hybrid** by default (dense embeddings +
+  BM25 lexical, fused by Reciprocal Rank Fusion, with small metadata boosts), so an
+  exact name ("Club Schwarm") and a fuzzy concept both land; it returns the most
+  relevant chunks **with citations (path + Day N)**, so you ground facts in the
+  record rather than recall. Useful flags: `--mode lexical` (BM25 only, **no model
+  needed**), `--mode dense` (embeddings only), `--recency` (favor recent days),
+  `--owner <name>`, `--since-day N`. Re-index at session end / save points:
+  `python Tools/memory_index.py` (incremental; after the one-time embedder swap to
+  bge-m3, run `--rebuild` once).
   - **The firewall holds here too.** `--scope public` returns only actor-safe
     chunks (never `gm-secrets`, `secrets.md`, `drives.md`, `world-state`,
     `developments`, or GM working files). When you assemble an **`npc-actor`
@@ -248,18 +261,17 @@ Two habits, once it's on:
     `gm` results into an actor's prompt. `--scope gm` (the default) is for you and
     the secret-aware world tools only.
 
-- **Scribe routine world-moves and collisions locally; escalate the pivots.** After
-  a world tick, run `python Tools/world_scribe.py` instead of always invoking the
-  Opus `world-director`. The local plot-scribe writes each off-screen move **and
-  resolves each detected collision** into `Game/developments.md`, **promotes a
-  hardened collision into `Game/plots.md`**, and a local critic triages. Beats the
-  critic marks **`Escalate: claude`** (a planned reveal, a major faction turn,
-  anything turning on a hidden secret or the Player's own arc) are the ones you hand
-  to the real `world-director`; the local model never resolves those on its own, and
-  never fabricates a winner — the resource advantage is a hint, not a verdict.
-  Player-facing **prose stays on Claude** — the local tier produces *facts*, you (or
-  the `chapter-renderer`) produce the literature. Log what ran locally in
-  `Game/cost-ledger.md` (be seen to be fair — the savings are visible, not a vibe).
+- **Template routine world-moves; escalate the rest to Claude.** After a world
+  tick, run `python Tools/world_scribe.py`. It **templates** each routine mover into
+  `Game/developments.md` deterministically — a true, abstract fact, never an
+  invented event or power — and prints a **hand-off manifest** of what needs a
+  director. Resolve collisions and reflection with **`world-director-lite`**
+  (Sonnet); reserve **`world-director`** (Opus) for the secret-bearing pivots. The
+  directors — not a local model — resolve collisions, promote hardened ones into
+  `Game/plots.md`, and synthesise beliefs / re-plan. Player-facing **prose stays on
+  Claude** — the deterministic tier produces *facts*, you (or the
+  `chapter-renderer`) produce the literature. Log what ran where in
+  `Game/cost-ledger.md` (be seen to be fair — the cost split is visible, not a vibe).
 
 ## Rendering the story — the fan-fiction layer
 

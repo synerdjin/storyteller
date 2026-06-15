@@ -1,6 +1,6 @@
 # Plots — the master plot registry (GM ONLY)
 
-> ⚠️ GM-only. This is the **single source of truth** for every plot in the living world — the Player's personal plot *and* the emergent world plots that run with or without them, including the ones the Player has never heard of. The `world-director` and the per-post loop read and update it; `Tools/world_scribe.py` **promotes a detected collision into a new entry here** when it matures into a standing conflict.
+> ⚠️ GM-only. This is the **single source of truth** for every plot in the living world — the Player's personal plot *and* the emergent world plots that run with or without them, including the ones the Player has never heard of. The per-post loop reads and updates it: a Claude director (`world-director-lite`, or `world-director` for a pivot) **promotes a detected collision into a new entry here** when it matures into a standing conflict.
 >
 > `Game/threads.md` is the **player-facing view** of this file — only the plots the Player's character actually knows about, written for them to read. Keep `threads.md` strictly derived from the `Player involvement: aware | observing | participating` entries here; the hidden and `unaware` plots live only in this file. Never quote this file to the Player or hand it to an `npc-actor`.
 

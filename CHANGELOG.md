@@ -11,6 +11,22 @@ Version numbers are `MAJOR.MINOR.PATCH`:
 
 ---
 
+## 2.7.0 — 2026-06-15
+
+### Changed — retire the local generative tier; upgrade local retrieval to hybrid search
+Playtesting surfaced the predictable failure of a small local model asked to *invent* World-of-Darkness facts: the qwen plot-scribe gave a Toreador a memory-erasure power, a Mind charm to a vampire with no Mind sphere, and staged a reality-shredding mage standoff that contradicted the live scene. The drift was structural (generation, not retrieval), so this release **splits the two local jobs and treats them oppositely** — keep the well-behaved embedder, retire the generative model — and controls Claude cost with a clean three-tier escalation. Engine law holds: Claude is the brain, tools stay deterministic and dependency-free.
+
+- **The local generative tier is retired.** `Tools/world_scribe.py` no longer calls any LLM. It now **templates routine off-screen movers deterministically** from the metronome's structured state — a true, abstract fact ("X pressed on toward their goal; clock now 4/6"), never an invented event or power, so that class of drift is now *structurally impossible*. It prints a **hand-off manifest** (collisions, reflection, pivotal movers) instead of resolving them locally. The generative prompts `Tools/local-agents/{plot-scribe,critic,reflector}.md` are removed.
+- **New everyday director on Sonnet.** `.claude/agents/world-director-lite.md` (`model: sonnet`) resolves the routine collisions, faction turns, and reflection/re-planning — faithful to the splat's rules and cheap. `world-director.md` (Opus) is now scoped to the **secret-bearing pivots**: planned reveals, beats turning on a hidden secret's payoff, a major faction's whole trajectory, or the Player's own arc. The lite director flags anything it hits that belongs to Opus.
+- **Hybrid semantic search.** `Tools/memory_search.py` now fuses dense embeddings with a pure-Python **BM25** lexical ranking via **Reciprocal Rank Fusion**, plus small auditable metadata boosts (an owner named in the query; optional `--recency`). New flags: `--mode hybrid|dense|lexical` (lexical needs **no model**) and `--recency`. Exact proper nouns ("Club Schwarm") that dense alone missed now land.
+- **Embedder swapped to `bge-m3`** (1024-dim, MIT) in `Tools/local_config.py` and `Game/local-models.json`. `llm_model` is now off the per-post hot path (used only by the optional `world_health` tone read and the deferred reranker seam).
+- **Reranker seam (deferred).** `memory_search.maybe_rerank()` is a documented no-op; Ollama has no native rerank endpoint, so a neural reranker is left as an optional future step.
+
+### Campaign migration (optional)
+- After updating, set `embed_model` to `bge-m3` in your campaign's `Game/local-models.json` (or keep your current embedder — both work) and run `python Tools/memory_index.py --rebuild` once. The index records its embedder and refuses to search a mismatched one, so it rebuilds safely either way.
+- Pull the embedder: `ollama pull bge-m3`. No LLM pull is required anymore.
+- Nothing in your save data (story, cast, plots, character) is touched.
+
 ## 2.6.0 — 2026-06-13
 
 ### Added — three patterns harvested from the 2025 D&D-agents literature
