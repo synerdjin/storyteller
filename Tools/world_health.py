@@ -296,22 +296,69 @@ def _is_isolated(agent, agents):
     return True
 
 
+def _drives_body(folder):
+    """The GM-only PROSE body of a drives.md (everything after the front-matter
+    fence): ## Agenda, ## Reflection notes (director-appended beliefs), etc.
+    The per-post propagation guard only sees parsed front-matter; this session-end
+    detector reads the prose too, since reflection beliefs are a real leak vector."""
+    try:
+        lines = (folder / "drives.md").read_text(encoding="utf-8").splitlines()
+    except Exception:
+        return ""
+    if not lines or lines[0].strip() != "---":
+        return "\n".join(lines)
+    for i in range(1, len(lines)):
+        if lines[i].strip() == "---":
+            return "\n".join(lines[i + 1:])
+    return ""
+
+
+def _agent_secret_texts(folder, agent):
+    """Every GM-only text the detector fingerprints for one agent: structured
+    front-matter (goal/success + relationship notes, via social) PLUS the drives
+    prose body PLUS secrets.md — the secret stores CLAUDE.md treats as primary."""
+    texts = list(social._forbidden_texts([agent]))
+    body = _drives_body(folder)
+    if body.strip():
+        texts.append(body)
+    try:
+        sec = (folder / "secrets.md").read_text(encoding="utf-8")
+        if sec.strip():
+            texts.append(sec)
+    except Exception:
+        pass
+    return texts
+
+
 def firewall_scan(root, agents):
     """Flag any actor-safe Cast/*/memory.md that echoes a living agent's secret
-    goal/success text — the firewall-breach this audit catches for campaigns that
-    ran an affected pre-fix world tick. Deterministic; reuses social's fingerprint.
+    text — the firewall-breach this audit catches for campaigns that ran an
+    affected pre-fix world tick. Deterministic; reuses social's fingerprint.
 
-    Returns a list of (severity, message). Empty when clean (or when social can't
-    be imported — then the check is simply skipped, never a false alarm)."""
-    findings = []
-    if social is None or not agents:
-        return findings
-    # Per-agent forbidden text, so a hit can name *whose* secret leaked.
-    per_agent = {a.name: social._forbidden_texts([a]) for a in agents}
-    per_agent = {n: f for n, f in per_agent.items() if f}
+    Unlike the per-post propagation guard (front-matter fields only), this
+    session-end pass also fingerprints the drives.md prose body and secrets.md,
+    so a leaked reflection belief or secret agenda is caught, not just goal text.
+
+    Returns a list of (severity, message). A `note` (not a clean pass) is returned
+    when the scan could not run (no `social` module), so a broken import never
+    reads as a green checkmark."""
+    if social is None:
+        return [("note", "firewall scan SKIPPED — could not import the `social` "
+                 "module, so actor memory was not fingerprinted this run. Re-run "
+                 "from the repo root to enable it.")]
+    if not agents:
+        return []
+    root = Path(root)
+    # Per-agent secret text, so a hit can name *whose* secret leaked.
+    per_agent = {}
+    for a in agents:
+        texts = _agent_secret_texts(root / "Cast" / a.name, a)
+        if any(t.strip() for t in texts):
+            per_agent[a.name] = texts
     if not per_agent:
-        return findings
-    for mem in sorted((Path(root) / "Cast").glob("*/memory.md")):
+        return []
+    findings = []
+    for mem in sorted((root / "Cast").glob("*/memory.md")):
         if mem.parent.name.startswith("_"):
             continue
         try:
@@ -323,9 +370,9 @@ def firewall_scan(root, agents):
             if social._shares_ngram(text, forbidden):
                 findings.append((
                     "warn",
-                    f"Cast/{owner}/memory.md echoes {src_name}'s secret "
-                    f"goal/success text — a firewall leak. Scrub the offending "
-                    f"'What I've learned about others' line(s)."))
+                    f"Cast/{owner}/memory.md echoes {src_name}'s secret text "
+                    f"(goal / relationship note / agenda / reflection / secrets) "
+                    f"— a firewall leak. Scrub the offending line(s)."))
     return findings
 
 
@@ -691,6 +738,23 @@ def _self_test():
                 assert any(s == "warn" for s, _ in frep["firewall"]), frep["firewall"]
                 assert any("kira" in m for _, m in frep["firewall"])
                 assert "firewall" in format_report(frep, ("skipped", "x")).lower()
+
+                # the detector also catches a secrets.md leak (not just goal text):
+                # a distinctive secrets.md sentence echoed in another NPC's memory.
+                secret2 = "the relic beneath the chapel is a forgery she planted"
+                (fw / "Cast" / "sabine" / "secrets.md").write_text(
+                    f"# sabine — secrets (GM ONLY)\n\n{secret2}.\n", encoding="utf-8")
+                (fw / "Cast" / "lucien").mkdir(parents=True)
+                (fw / "Cast" / "lucien" / "drives.md").write_text(
+                    "---\nliving: true\nstate: brooding\nsalience: 1\n---\n",
+                    encoding="utf-8")
+                (fw / "Cast" / "lucien" / "memory.md").write_text(
+                    "# lucien — memory\n\n## What I've learned about others\n"
+                    f"- *[Day 2]* — about `sabine`: I suspect {secret2}.\n",
+                    encoding="utf-8")
+                frep2 = assess(fw, stale_days=4)
+                assert any("lucien" in m and s == "warn"
+                           for s, m in frep2["firewall"]), frep2["firewall"]
 
             # unseeded world: graceful, no false alarms
             empty = root / "empty"

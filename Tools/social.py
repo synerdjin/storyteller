@@ -22,11 +22,19 @@ and answers three deterministic questions (no model, no randomness):
 
 The firewall holds — and now defends itself. Only *observable* developments
 propagate (never a hidden secret), and the note written to a learner's memory is
-the visible move only. Because this module writes into actor-safe save data
-(`Cast/*/memory.md`), it does **not** trust the caller to hand it a clean
-headline: `propagate` validates every headline against the living agents' secret
-`goal`/`success` text (`safe_headline`) and silently drops — never writes — any
-that echoes it. A buggy caller can no longer reopen the leak through this door.
+the visible move only. The real guarantee on the live path is upstream: the one
+caller (`world_scribe`) passes a fixed, goal-free headline, never goal text.
+
+This module adds *defense-in-depth*, not a second airtight wall. Because it
+writes into actor-safe save data (`Cast/*/memory.md`), `propagate` does not trust
+the caller's headline: it validates each one against the living agents' secret
+front-matter fields — goal `pursue`/`success` and relationship `note`s
+(`safe_headline`) — and silently drops, never writes, any that echoes them. This
+catches a buggy caller that re-derives a headline from those known secret fields.
+It is a fingerprint of *known* fields, not a proof of safety: prose secrets in
+the body of drives.md or in `secrets.md` are out of its scope (see
+`_forbidden_texts`). Keep the upstream discipline — a fixed headline — as the
+primary defense; this is the backstop.
 
 Usage:
     python Tools/social.py --graph        # print the living social graph
@@ -171,7 +179,9 @@ def append_observation(root, learner, day, participant, headline, hops):
 # --------------------------------------------------------------------------- #
 
 HEADLINE_MAX = 140              # a true *abstract* observation is short
-_WORD = re.compile(r"[a-z0-9]+")
+# Unicode-aware: `\w` keeps accented / Cyrillic / CJK letters, so a non-English
+# NPC name in a secret can't slip past the fingerprint by being tokenized away.
+_WORD = re.compile(r"\w+", re.UNICODE)
 
 
 def _tokens(s):
@@ -179,14 +189,22 @@ def _tokens(s):
 
 
 def _forbidden_texts(agents):
-    """Free-text spoiler fields from each living agent's drives: the goal's
-    `pursue`/`success` strings (or a legacy string goal). The short `target` id
-    is excluded on purpose — it's a common word and would cause false rejects;
-    the n-gram check below is what catches verbatim copying."""
+    """Free-text spoiler fields from each living agent's drives front-matter: the
+    goal's `pursue`/`success` strings (or a legacy string goal), and every
+    relationship `note` (e.g. "the one person who can block the seat" — these are
+    GM-only and a real leak vector). The short `target` id is excluded on purpose
+    — it's a common word and would cause false rejects; the n-gram check below is
+    what catches verbatim copying.
+
+    Scope note: this reads only the *parsed front-matter* (`agent.fields`). The
+    prose body of drives.md (## Agenda, ## Reflection notes) and `secrets.md` are
+    NOT covered here — they are out of band for the per-post propagation guard.
+    The session-end `world_health.firewall_scan` is the place to widen coverage."""
     out = []
     items = agents.values() if isinstance(agents, dict) else (agents or [])
     for a in items:
-        g = getattr(a, "fields", {}).get("goal") if a is not None else None
+        fields = getattr(a, "fields", {}) if a is not None else {}
+        g = fields.get("goal")
         if isinstance(g, dict):
             for k in ("pursue", "success"):
                 v = g.get(k)
@@ -194,20 +212,38 @@ def _forbidden_texts(agents):
                     out.append(v)
         elif isinstance(g, str) and g.strip():
             out.append(g)
+        rels = fields.get("relationships")
+        if isinstance(rels, dict):
+            for edge in rels.values():
+                note = edge.get("note") if isinstance(edge, dict) else None
+                if isinstance(note, str) and note.strip():
+                    out.append(note)
     return out
 
 
 def _shares_ngram(text, forbidden, ngram=4):
-    """True if `text` shares a run of `ngram`+ consecutive words with any
-    forbidden string — a strong, coincidence-proof signal of verbatim copying."""
+    """True if `text` shares a verbatim run of words with any forbidden string.
+
+    For a long secret, a shared run of `ngram` (4) consecutive words is a
+    coincidence-proof signal of copying. A *short* secret (fewer than `ngram`
+    words — e.g. a 3-word `success` like "burn the chantry") could never reach a
+    4-word run, so it would slip past; for those we require its *whole* phrase to
+    appear verbatim (effective n = its length), with a floor of 2 so a one-word
+    secret like the `pursue` verb "control" can't trip on every headline."""
     htok = _tokens(text)
-    if len(htok) < ngram:
+    if not htok:
         return False
-    hgrams = {tuple(htok[i:i + ngram]) for i in range(len(htok) - ngram + 1)}
+    hgrams_by_n = {}  # cache the headline's n-gram set per window size
     for f in forbidden:
         ftok = _tokens(f)
-        for i in range(len(ftok) - ngram + 1):
-            if tuple(ftok[i:i + ngram]) in hgrams:
+        n = min(ngram, len(ftok))
+        if n < 2 or len(htok) < n:
+            continue  # 1-token secrets are too generic; headline too short to hold n
+        if n not in hgrams_by_n:
+            hgrams_by_n[n] = {tuple(htok[i:i + n]) for i in range(len(htok) - n + 1)}
+        hgrams = hgrams_by_n[n]
+        for i in range(len(ftok) - n + 1):
+            if tuple(ftok[i:i + n]) in hgrams:
                 return True
     return False
 
@@ -368,6 +404,31 @@ def _self_test():
         wrote2 = propagate(root, [{"participants": ["sabine"],
                                    "headline": "moved on her own designs", "day": 1}])
         assert wrote2 >= 1
+
+    # relationship `note` text is a secret too — collected, and caught verbatim.
+    class R:
+        def __init__(self, rels):
+            self.name = "r"
+            self.fields = {"relationships": rels}
+
+    rel_forbidden = _forbidden_texts([R({"vance": {
+        "tie": "rival", "weight": -4,
+        "note": "secretly her sire, which would ruin her"}})])
+    assert any("secretly her sire" in f for f in rel_forbidden), rel_forbidden
+    assert not safe_headline("rumor: secretly her sire, which would ruin her",
+                             rel_forbidden)
+
+    # a SHORT secret (< ngram words) must still be caught — by requiring its whole
+    # phrase verbatim — instead of slipping past the 4-gram window entirely.
+    short = _forbidden_texts([G("s", {"pursue": "burn", "success": "burn the chantry"})])
+    assert not safe_headline("she plans to burn the chantry tonight", short)
+    assert safe_headline("she lit a single candle", short)   # unrelated → safe
+    # but a one-word secret (the `pursue` verb) is too generic to match anything
+    assert safe_headline("the council will burn brighter than ever", ["burn"])
+
+    # Unicode: a non-ASCII name in a secret can't be tokenized away to dodge match.
+    uni = _forbidden_texts([G("u", {"success": "Søren guards the Zaïre relic in secret"})])
+    assert _shares_ngram("they say Søren guards the Zaïre relic now", uni)
 
     print("social self-test: OK")
     return 0
