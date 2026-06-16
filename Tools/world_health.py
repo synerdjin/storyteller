@@ -49,6 +49,10 @@ try:
     import local_client
 except Exception:  # pragma: no cover
     local_client = None
+try:
+    import social  # firewall fingerprinting (goal/success text in actor memory)
+except Exception:  # pragma: no cover
+    social = None
 
 # A placeholder line in a freshly-seeded file ("*(none yet)*"). We must not
 # mistake the templates' own scaffolding for real story state.
@@ -205,7 +209,7 @@ def assess(root, stale_days):
     seeded = bool(agents) or bool(plots)
     rep = {"day": day, "n_agents": len(agents), "seeded": seeded,
            "progression": [], "collision": [], "threads": [], "backlog": [],
-           "tone": None}
+           "firewall": firewall_scan(root, agents), "tone": None}
 
     # --- (1) Goal progression: is each living agent actually moving? ---------
     contested_targets = {}
@@ -290,6 +294,86 @@ def _is_isolated(agent, agents):
         if others:
             return False
     return True
+
+
+def _drives_body(folder):
+    """The GM-only PROSE body of a drives.md (everything after the front-matter
+    fence): ## Agenda, ## Reflection notes (director-appended beliefs), etc.
+    The per-post propagation guard only sees parsed front-matter; this session-end
+    detector reads the prose too, since reflection beliefs are a real leak vector."""
+    try:
+        lines = (folder / "drives.md").read_text(encoding="utf-8").splitlines()
+    except Exception:
+        return ""
+    if not lines or lines[0].strip() != "---":
+        return "\n".join(lines)
+    for i in range(1, len(lines)):
+        if lines[i].strip() == "---":
+            return "\n".join(lines[i + 1:])
+    return ""
+
+
+def _agent_secret_texts(folder, agent):
+    """Every GM-only text the detector fingerprints for one agent: structured
+    front-matter (goal/success + relationship notes, via social) PLUS the drives
+    prose body PLUS secrets.md — the secret stores CLAUDE.md treats as primary."""
+    texts = list(social._forbidden_texts([agent]))
+    body = _drives_body(folder)
+    if body.strip():
+        texts.append(body)
+    try:
+        sec = (folder / "secrets.md").read_text(encoding="utf-8")
+        if sec.strip():
+            texts.append(sec)
+    except Exception:
+        pass
+    return texts
+
+
+def firewall_scan(root, agents):
+    """Flag any actor-safe Cast/*/memory.md that echoes a living agent's secret
+    text — the firewall-breach this audit catches for campaigns that ran an
+    affected pre-fix world tick. Deterministic; reuses social's fingerprint.
+
+    Unlike the per-post propagation guard (front-matter fields only), this
+    session-end pass also fingerprints the drives.md prose body and secrets.md,
+    so a leaked reflection belief or secret agenda is caught, not just goal text.
+
+    Returns a list of (severity, message). A `note` (not a clean pass) is returned
+    when the scan could not run (no `social` module), so a broken import never
+    reads as a green checkmark."""
+    if social is None:
+        return [("note", "firewall scan SKIPPED — could not import the `social` "
+                 "module, so actor memory was not fingerprinted this run. Re-run "
+                 "from the repo root to enable it.")]
+    if not agents:
+        return []
+    root = Path(root)
+    # Per-agent secret text, so a hit can name *whose* secret leaked.
+    per_agent = {}
+    for a in agents:
+        texts = _agent_secret_texts(root / "Cast" / a.name, a)
+        if any(t.strip() for t in texts):
+            per_agent[a.name] = texts
+    if not per_agent:
+        return []
+    findings = []
+    for mem in sorted((root / "Cast").glob("*/memory.md")):
+        if mem.parent.name.startswith("_"):
+            continue
+        try:
+            text = mem.read_text(encoding="utf-8")
+        except Exception:
+            continue
+        owner = mem.parent.name
+        for src_name, forbidden in per_agent.items():
+            if social._shares_ngram(text, forbidden):
+                findings.append((
+                    "warn",
+                    f"Cast/{owner}/memory.md echoes {src_name}'s secret text "
+                    f"(goal / relationship note / agenda / reflection / secrets) "
+                    f"— a firewall leak. Scrub the offending line(s)."))
+    return findings
 
 
 def _ledger_phases(root):
@@ -417,7 +501,8 @@ def _section(out, title, findings):
 
 
 def format_report(rep, tone):
-    warns = sum(1 for grp in ("progression", "collision", "threads", "backlog")
+    warns = sum(1 for grp in ("progression", "collision", "threads", "backlog",
+                              "firewall")
                 for sev, _ in rep[grp] if sev == "warn")
     out = [
         "# World health (GM ONLY)",
@@ -444,10 +529,18 @@ def format_report(rep, tone):
         out.append("")
     _section(out, "Threads (is the Player's view going stale?)", rep["threads"])
     _section(out, "Developments backlog", rep["backlog"])
+    _section(out, "Firewall (no secret goal/success text in actor memory)",
+             rep.get("firewall") or [])
     out.append("## Tone & compliance (optional local read)")
     mark = {"ok": "✓", "drift": "⚠", "skipped": "·"}.get(tone[0], "·")
     out.append(f"- {mark} {tone[0]}: {tone[1]}")
     out.append("")
+    if rep.get("firewall"):
+        out.append("**Verdict (firewall):** secret goal/success text was found in "
+                   "an actor-safe `memory.md`. This is a spoiler leak, not mere "
+                   "bookkeeping — scrub the flagged line(s) before voicing those "
+                   "NPCs via `npc-actor`. (Fixed at the source in the engine; this "
+                   "catches save data written by an affected earlier tick.)")
     if warns == 0:
         out.append("**Verdict:** the world is healthy — keep playing.")
     else:
@@ -616,6 +709,52 @@ def _self_test():
 
             text = format_report(rep, ("skipped", "test"))
             assert "World health" in text and "Verdict" in text
+            # clean save data: the firewall scan must not false-alarm here
+            assert not rep["firewall"], rep["firewall"]
+
+            # --- firewall scan: a memory.md that echoes a secret goal must warn ---
+            if social is not None:
+                fw = root / "fw"
+                (fw / "Game").mkdir(parents=True)
+                (fw / "CLAUDE.md").write_text("x", encoding="utf-8")
+                (fw / "Game" / "current-scene.md").write_text("Day 5\n", encoding="utf-8")
+                secret = ("keeps Daniel-the-bridge hers without ever revealing "
+                          "the cult to the court")
+                (fw / "Cast" / "sabine").mkdir(parents=True)
+                (fw / "Cast" / "sabine" / "drives.md").write_text(
+                    "---\nliving: true\nstate: moving\n"
+                    "goal: { pursue: control, target: diana, "
+                    f"success: \"{secret}\" }}\nsalience: 4\n---\n", encoding="utf-8")
+                # kira's actor-safe memory carries the leaked goal text (the bug)
+                (fw / "Cast" / "kira").mkdir(parents=True)
+                (fw / "Cast" / "kira" / "memory.md").write_text(
+                    "# kira — memory\n\n## What I've learned about others\n"
+                    f"- *[Day 1]* — about `sabine`: heard word that {secret}\n",
+                    encoding="utf-8")
+                (fw / "Cast" / "kira" / "drives.md").write_text(
+                    "---\nliving: true\nstate: scheming\nsalience: 2\n---\n",
+                    encoding="utf-8")
+                frep = assess(fw, stale_days=4)
+                assert any(s == "warn" for s, _ in frep["firewall"]), frep["firewall"]
+                assert any("kira" in m for _, m in frep["firewall"])
+                assert "firewall" in format_report(frep, ("skipped", "x")).lower()
+
+                # the detector also catches a secrets.md leak (not just goal text):
+                # a distinctive secrets.md sentence echoed in another NPC's memory.
+                secret2 = "the relic beneath the chapel is a forgery she planted"
+                (fw / "Cast" / "sabine" / "secrets.md").write_text(
+                    f"# sabine — secrets (GM ONLY)\n\n{secret2}.\n", encoding="utf-8")
+                (fw / "Cast" / "lucien").mkdir(parents=True)
+                (fw / "Cast" / "lucien" / "drives.md").write_text(
+                    "---\nliving: true\nstate: brooding\nsalience: 1\n---\n",
+                    encoding="utf-8")
+                (fw / "Cast" / "lucien" / "memory.md").write_text(
+                    "# lucien — memory\n\n## What I've learned about others\n"
+                    f"- *[Day 2]* — about `sabine`: I suspect {secret2}.\n",
+                    encoding="utf-8")
+                frep2 = assess(fw, stale_days=4)
+                assert any("lucien" in m and s == "warn"
+                           for s, m in frep2["firewall"]), frep2["firewall"]
 
             # unseeded world: graceful, no false alarms
             empty = root / "empty"
