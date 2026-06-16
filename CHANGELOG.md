@@ -11,6 +11,20 @@ Version numbers are `MAJOR.MINOR.PATCH`:
 
 ---
 
+## 2.8.0 — 2026-06-16
+
+### Fixed — close a social-propagation firewall leak (secret goal text reaching actor-safe memory)
+Playtesting surfaced a firewall breach: the per-post social propagation was writing **secret `drives.md` goal/`success` text** into actor-safe `Cast/*/memory.md` ("What I've learned about others"). Any NPC voiced via `npc-actor` (which is handed `profile.md` + `memory.md`) would then "know" the very thing a mystery depends on. `world_scribe.py` propagated `_short(a.get("goal"))` as the observation headline — i.e. the goal line, which carries the agent's `success` clause — and `social.py` faithfully wrote whatever headline it was handed. The propagation step's own contract is that *only the visible move is recorded, never the hidden cause*; this violated it.
+
+- **Source fix (`world_scribe.py`).** The headline propagated into a learner's memory is now a fixed, goal-free constant (`OBSERVABLE_HEADLINE` — "has been quietly pursuing aims of their own lately"), never the agent's goal/`success` text. The GM-only `developments.md` entry still names the real goal (that file is not actor-safe); the NPC memory note no longer does.
+- **Defense-in-depth (`social.py`).** `propagate()` no longer trusts its caller. It fingerprints every living agent's secret goal/`success` text and validates each headline (`safe_headline`) — dropping, never writing, any that echoes secret text (a 4-gram verbatim match) or is implausibly long. A future careless caller can't reopen the leak through this door.
+- **Migration detection (`world_health.py`).** A new **Firewall** check scans every actor-safe `memory.md` for secret goal/`success` fingerprints and warns with the offending file, so a campaign that ran an affected earlier tick can find and scrub leaked lines. Deterministic; skips cleanly if `social` can't be imported.
+- **Regression tests** added to all three tools' `--self-test` so a future edit that re-opens the firewall fails loudly.
+
+### Campaign migration (important if you played on 2.6.x–2.7.0)
+- Run `python Tools/world_health.py` once after updating. If the new **Firewall** section flags any `Cast/*/memory.md`, open the named file and delete the offending `- *[Day N]* — about \`X\`: …` line(s) under "What I've learned about others" — these leaked secret goal text. A quick manual check: `grep -rn "What I've learned" -A20 Cast/*/memory.md` and remove any line that reads like a goal/agenda rather than a witnessed event.
+- No automated edit touches your save data; the scrub is yours to confirm. Nothing in story, cast profiles, plots, or character is otherwise changed.
+
 ## 2.7.0 — 2026-06-15
 
 ### Changed — retire the local generative tier; upgrade local retrieval to hybrid search

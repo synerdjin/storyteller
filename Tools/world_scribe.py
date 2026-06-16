@@ -48,6 +48,13 @@ ESCALATE_SALIENCE = 5       # a mover this salient is pivotal → hand to a dire
 SURFACE_SOON_SALIENCE = 4   # this salient (or a filled clock) → surfaces "soon"
 HEADLINE_MAX = 70
 
+# FIREWALL: the headline propagated into actor-safe Cast/*/memory.md is a fixed,
+# goal-free line — NEVER the agent's `goal`/`success` text (which carries the
+# campaign's secrets). The developments.md entry below may name the goal because
+# that file is GM-only; an NPC's memory may not. social.propagate() independently
+# re-checks this, but the firewall starts here, at the source.
+OBSERVABLE_HEADLINE = "has been quietly pursuing aims of their own lately"
+
 
 def current_day(root):
     p = Path(root) / "Game" / "current-scene.md"
@@ -321,8 +328,11 @@ def run(root, dry_run=False, verbose=True):
         if pivotal:
             escalated_movers.append(a["name"])
         if surface_for(a, pivotal) != "hidden":   # observable → propagates
+            # FIREWALL: propagate a fixed, goal-free headline — never the goal
+            # text. What the NPCs *witness* is that the agent stirred, not the
+            # secret aim behind it (that stays in GM-only developments.md).
             observations.append({"participants": [a["name"]],
-                                 "headline": _short(a.get("goal") or "something stirred"),
+                                 "headline": OBSERVABLE_HEADLINE,
                                  "day": day})
 
     if dry_run:
@@ -440,6 +450,55 @@ def _self_test():
         assert "templated (world_scribe" in dev
         assert "*(none yet)*" not in dev            # placeholder removed
         assert "Escalate: claude" not in dev        # routine, not pivotal
+
+    # --- FIREWALL regression: an observable mover's SECRET goal/success text must
+    #     never propagate into an actor-safe memory.md. The headline written to a
+    #     learner is the fixed, goal-free OBSERVABLE_HEADLINE — proven end-to-end. ---
+    src = Path(__file__).read_text(encoding="utf-8")
+    # the propagated headline must be the constant, not the goal field
+    assert '"headline": OBSERVABLE_HEADLINE' in src, "must propagate the safe constant"
+    assert "_short(a.get(\"goal\")" not in src, "goal text must never become a headline"
+    if social is not None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            secret = ("keeps Daniel-the-bridge hers without ever revealing "
+                      "the cult to the court")
+            (root / "CLAUDE.md").write_text("x", encoding="utf-8")
+            (root / "Game").mkdir()
+            (root / "Game" / "current-scene.md").write_text(
+                "**Day 14 — evening.**\n", encoding="utf-8")
+            (root / "Game" / "developments.md").write_text(
+                "# Developments\n\n## Pending\n\n*(none yet)*\n", encoding="utf-8")
+            # sabine is an observable mover (salience 4) whose Goal line carries
+            # the secret; kira is an ally who would hear of it.
+            (root / "Game" / ".world-tick-queue.md").write_text(
+                "## sabine\n- Source: `Cast/sabine/drives.md`\n"
+                "- State: `moving`  |  Clock: 3/6  |  Salience: 4\n"
+                f"- Goal: control `diana` ({secret})\n"
+                "- Why flagged: clock advanced to 3/6\n", encoding="utf-8")
+            for n, drv in {
+                "sabine": ("---\nliving: true\nstate: moving\n"
+                           "goal: { pursue: control, target: diana, "
+                           f"success: \"{secret}\" }}\n"
+                           "relationships:\n  kira: { tie: ally, weight: 3 }\n"
+                           "salience: 4\n---\n"),
+                "kira": "---\nliving: true\nstate: scheming\nsalience: 2\n---\n",
+            }.items():
+                md = root / "Cast" / n
+                md.mkdir(parents=True)
+                (md / "memory.md").write_text(
+                    f"# {n} — memory\n\n## What I've learned about others\n",
+                    encoding="utf-8")
+                (md / "drives.md").write_text(drv, encoding="utf-8")
+
+            assert run(root, verbose=False) == 0
+            kira_mem = (root / "Cast" / "kira" / "memory.md").read_text(encoding="utf-8")
+            assert "Daniel-the-bridge" not in kira_mem, kira_mem  # the spoiler
+            assert secret not in kira_mem and "keeps Daniel" not in kira_mem
+            assert OBSERVABLE_HEADLINE in kira_mem, kira_mem      # the safe line
+            # the GM-only developments.md MAY name the goal (it's not actor-safe)
+            dev2 = (root / "Game" / "developments.md").read_text(encoding="utf-8")
+            assert secret in dev2, "developments.md (GM-only) still records the real goal"
 
     # --- interactions + reflection are NOT resolved here; they go to the manifest ---
     qi = (
