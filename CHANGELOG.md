@@ -11,6 +11,19 @@ Version numbers are `MAJOR.MINOR.PATCH`:
 
 ---
 
+## 2.9.0 — 2026-06-17
+
+### Added — the living-world dashboard (author god-view console)
+The world's state was scattered across GM-only files (`plots.md`, `developments.md`, the living cast, `ledgers.md`), with no single place to *see* the world move or to pick a thread to lean into. This release adds a deterministic, dependency-free console that renders one readable view of it.
+
+- **New tool (`Tools/world_dashboard.py`).** Renders `Game/world-dashboard.md` with two sections: **the world right now** (who's in motion — state, clock, salience, mood, goal target; what just moved off-screen; where contested-control pressure is building) and **threads you could pull** (every plot grouped by the Player's involvement, so the Player can scan the world and choose what to engage). It reads existing state and **invents nothing** — pure stdlib, no model, no randomness, output stable across runs. Reuses `world_tick.py`'s agent discovery / collision helpers and `ledger.py`'s standing/phase rather than re-parsing.
+- **Spoiler-tiered, not spoiler-filtered.** The file is GM/author tier and *contains secrets*, so instead of hiding them it **tags** every item 🟢 KNOWN / 🟡 SENSED / 🔴 HIDDEN to show what the character has actually earned. A strict `--player` mode produces a genuinely spoiler-free view (KNOWN/SENSED only, no GM internals; tier defaults fail closed to HIDDEN).
+- **Firewall.** `Tools/memory_index.py`'s `classify()` now **skips** `world-dashboard.md` — it is never indexed, never returned by `--scope public`, never handed to an `npc-actor`. The generated file is **gitignored** alongside the other rebuildable, spoiler-bearing artifacts (`.world-health.md`, the memory index).
+- **Wired into the loop.** `CLAUDE.md` refreshes it as a step of the per-post tick loop and on *"show me the world,"* and documents it under "The world dashboard." Built-in `--self-test` covers tiering, the `--player` firewall, fenced-example/`---`-rule parsing, a no-`Surface` development failing closed, and graceful empty-world output.
+
+### Campaign migration (optional, automatic)
+- No action required. The dashboard is additive and touches no save data; `Game/world-dashboard.md` is a rebuildable, gitignored artifact you regenerate any time with `python Tools/world_dashboard.py`. The `memory_index.py` change only adds the new file to the skip list, so a re-index is harmless (and not required).
+
 ## 2.8.0 — 2026-06-16
 
 ### Fixed — close a social-propagation firewall leak (secret goal text reaching actor-safe memory)
