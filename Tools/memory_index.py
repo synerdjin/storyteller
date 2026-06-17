@@ -95,6 +95,7 @@ def classify(rel):
             "plots.md": ("secret", "plots"),       # master registry: hidden/unaware plots
             "ledgers.md": ("secret", "ledgers"),   # GM-only control ledgers
             "world.md": ("public", "lore"),
+            "world-dashboard.md": (None, None),  # generated god-view digest — skip
             "campaign.md": ("gm", "campaign"),
             "threads.md": ("gm", "threads"),
             "timeline.md": ("gm", "timeline"),
