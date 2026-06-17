@@ -58,6 +58,11 @@ try:
 except Exception:  # pragma: no cover
     ledger_mod = None
 
+# NOTE: world_dashboard.py imports several helpers from this module as a de-facto
+# public API — discover_agents, goal_target, _allied, _hostile_edge, priority,
+# _fmt_goal, _current_day. Renaming/removing them breaks the dashboard; keep both
+# in sync.
+
 # --------------------------------------------------------------------------- #
 # A tiny, dependency-free parser for the controlled YAML subset above.
 # It is intentionally NOT a general YAML parser — it understands exactly the

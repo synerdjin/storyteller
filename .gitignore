@@ -17,3 +17,8 @@ Game/.world-health.md
 # Local semantic-memory index: a rebuildable artifact (markdown is the source of
 # truth). Regenerate any time with `python Tools/memory_index.py`.
 Game/.memory-index/
+
+# Living-world dashboard: the GM/author god-view, rebuildable any time with
+# `python Tools/world_dashboard.py`. Never commit it — it carries spoilers
+# (unaware plots, NPC drives, contested-control numbers).
+Game/world-dashboard.md

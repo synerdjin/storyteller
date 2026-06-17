@@ -206,6 +206,7 @@ The relationship graphs in every `drives.md` together *are* a social network, an
 ```
 python Tools/world_tick.py            # one beat: advance clocks, detect collisions
 python Tools/world_scribe.py          # template routine movers; print the hand-off manifest
+python Tools/world_dashboard.py       # refresh the author's god-view console (see below)
 python Tools/world_tick.py --elapsed 3 --dawdle   # a 3-day skip while the Player stalled
 ```
 `world_tick.py` flags: `--elapsed N` for a time-skip (keep it in sync with the campaign day), `--dawdle` when the Player played it safe, `--fail` when a roll failed forward, `--max N` to cap how many agents/collisions queue (default 3), `--dry-run` to preview. It prints a summary and writes `Game/.world-tick-queue.md` (movers **and** a `## Interactions` section). **Then:**
@@ -218,6 +219,11 @@ python Tools/world_tick.py --elapsed 3 --dawdle   # a 3-day skip while the Playe
 3. **Read `Game/developments.md`.** Weave entries marked **`Surface: now`** into your narration as live pressure or an *offered* hook (directive 8 — no hard breaks); hold `soon`/`hidden`. Mark entries **drained** as you use them. A `Surface: now` collision the Player isn't part of can reach them as rumor, news, or background texture — the world is visibly larger than them.
 
 **The metronome's selection is binding.** Don't reach past it to advance a threat it didn't pick, or hold back one it did — that's the bias the tool exists to remove. If a clock filled or a collision fired, the consequence is owed; play it.
+
+### The world dashboard — the author's god-view console
+`python Tools/world_dashboard.py` renders **`Game/world-dashboard.md`**: a single, readable, deterministic *view* of the living world — who's in motion, what just moved off-screen, where the contested-control pressure is building, and **every plot grouped by how involved the Player's character already is**, so the Player can scan the world and pick a thread to lean into. It reads the existing state (`plots.md`, `developments.md`, the living cast, `ledgers.md`) and invents nothing. Refresh it as step of the per-post loop (above) and whenever the Player says *"show me the world."* When they pick a thread, raise its `Player involvement` in `plots.md` and weave an *offered* hook (directive 8 — no hard breaks).
+
+This file is **GM / author tier and contains secrets** (unaware plots, NPC drives, the ledger numbers) — it is the *opposite* of the spoiler-free `PLAYER-NOTES.md`. The Player reads it deliberately *as the author*, so instead of hiding secrets it **tags** every item 🟢 KNOWN / 🟡 SENSED / 🔴 HIDDEN to show what their character has actually earned. Never hand it to an `npc-actor`; `memory_index.classify` skips it so retrieval can never surface it. (A strict, spoiler-free `--player` view exists for a Player who'd rather not see behind the curtain — KNOWN/SENSED items only, no GM internals.)
 
 ### Director ≠ actor — keep the roles apart
 This is the one trap. **Both directors (`world-director` and `world-director-lite`) are GM-side and secret-aware** — they read `gm-secrets.md` and `Cast/*/secrets.md` *because* they advance hidden agendas. The **`npc-actor` is blind** — it voices a character with no file access and never sees secrets. Never blur them: never hand a director's secret-aware reasoning to the actor, and when a living NPC needs to *speak on-screen*, still voice them through the normal `npc-actor` path (the directors move the world *around* the Player; they don't perform dialogue in the scene). A director stages player-facing material only in `Game/developments.md`, which you curate — it never dumps secrets to the Player.
