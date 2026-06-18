@@ -22,3 +22,10 @@ Game/.memory-index/
 # `python Tools/world_dashboard.py`. Never commit it — it carries spoilers
 # (unaware plots, NPC drives, contested-control numbers).
 Game/world-dashboard.md
+
+# Ant Farm app
+app/antfarm.db
+app/web/node_modules/
+app/web/dist/
+__pycache__/
+*.pyc
