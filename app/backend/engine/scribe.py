@@ -42,6 +42,21 @@ def fmt_goal(agent):
     return str(g) if g is not None else "(unstated aim)"
 
 
+def fmt_goal_public(agent):
+    """Goal label WITHOUT the secret `success` line — safe to surface at any tier.
+
+    `pursue` (a generic verb) and `target` (a public entity id) are observable;
+    the `success` clause is the flavorful secret and stays behind the curtain.
+    A legacy free-string goal is treated as opaque (the whole thing could be a
+    spoiler), so it's reduced to a neutral phrase.
+    """
+    g = agent.fields.get("goal")
+    if isinstance(g, dict):
+        bits = " ".join(str(g[k]) for k in ("pursue", "target") if g.get(k))
+        return bits or "an aim of their own"
+    return "an aim of their own"
+
+
 def why_flagged(agent):
     """Reconstruct the queue's 'why' line from the agent's tick results."""
     bits = []
@@ -68,9 +83,14 @@ def surface_for(agent, pivotal):
 
 
 def format_development(day, agent):
-    """Render one routine mover as a development record (dict) — purely facts."""
+    """Render one routine mover as a development record (dict) — purely facts.
+
+    The headline/body are goal-PUBLIC (no secret `success` line), because a
+    templated development can surface to a non-curtain observer. The full goal,
+    including `success`, stays behind the curtain on the agent itself.
+    """
     name = agent.name
-    goal = fmt_goal(agent)
+    goal = fmt_goal_public(agent)
     why = why_flagged(agent)
     c = A.clock_of(agent.fields)
     clock = f"{c.get('filled')}/{c.get('total')}" if c else "?"
@@ -79,7 +99,7 @@ def format_development(day, agent):
 
     headline = _short(f"{name} advances — {goal}")
     clock_tail = "" if "clock" in why.lower() else f"; clock now {clock}"
-    body = (f"{name[:1].upper() + name[1:]} pressed on toward their goal "
+    body = (f"{name[:1].upper() + name[1:]} pressed on toward their aim "
             f"({goal}) this tick — {why}{clock_tail}.")
     return {
         "day": day, "agent": name, "headline": headline, "body": body,

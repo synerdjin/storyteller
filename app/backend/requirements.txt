@@ -1,0 +1,5 @@
+fastapi>=0.110
+uvicorn[standard]>=0.27
+anthropic>=0.40
+# stdlib used for everything else: sqlite3, json, dataclasses-free plain dicts.
+# Tests additionally use pytest + httpx (TestClient).
