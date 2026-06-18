@@ -111,6 +111,14 @@ Continuity lives in files, not just in the AI's memory: the current scene, a day
 
 ---
 
+## The Ant Farm — watch the world without playing
+
+The same living-world substrate that runs under your campaign can also be run **on its own**, as something you *watch* rather than play. The **Ant Farm** (under [`app/`](app/README.md)) is a standalone application with **no Player character**: you observe a flat ensemble of living NPCs pursue their goals and collide on a map, advance time whenever you like, click any character to read their mind, flip a **curtain** to peek at the secrets and the contested-control ledgers, and reach in with a **god hand** — inject an event, nudge an NPC's mood, or whisper a new goal and watch the collision it sets off.
+
+It's the engine's machinery turned inside out for observation. It **reuses the deterministic core** (the metronome, ledgers, social propagation, the scribe, the dice/oracle) — ported onto a SQLite store and proven byte-for-byte identical to `Tools/` by a parity test — and the same secrecy firewall holds: the curtain makes *you* omniscient, but a voiced NPC stays blind. With an `ANTHROPIC_API_KEY` set, a wizard generates a fresh world (tunable down to the number of NPCs, collisions, and locations) and the Opus/Sonnet directors narrate the collisions; with no key, a deterministic demo world still ticks, collides, and moves its ledgers — just without the prose.
+
+It's a FastAPI backend + a React/Vite front-end. See [`app/README.md`](app/README.md) to run it. (It's part of the engine — it ships and versions with everything else — but it's entirely separate from campaign play: it never touches your `Game/`, `Cast/`, or `Character/` files.)
+
 ## What's in here
 
 | Folder / file | What it's for |
@@ -124,6 +132,7 @@ Continuity lives in files, not just in the AI's memory: the current scene, a day
 | `.claude/agents/` | The GM's specialist subagents — campaign-architect, character-creator, world-director (Opus pivots), world-director-lite (Sonnet everyday), npc-actor, chapter-renderer. |
 | `PLAYER-NOTES.md` | Your spoiler-free notebook — what you know, want, and are chasing. The GM keeps it current; you can park your own notes there too. |
 | `CLAUDE.md` | The GM's full operating manual (how it runs the game). |
+| `app/` | The **Ant Farm** — a standalone observation app (FastAPI + React) that runs the living world on its own, with no Player. Reuses the deterministic engine; separate from campaign play. See [`app/README.md`](app/README.md). |
 
 ## A note on spoilers
 

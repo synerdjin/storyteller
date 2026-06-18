@@ -11,6 +11,49 @@ Version numbers are `MAJOR.MINOR.PATCH`:
 
 ---
 
+## 2.10.0 — 2026-06-18
+
+### Added — the Ant Farm: a standalone observation app for the living world
+The living-world substrate (metronome, control ledgers, social propagation, the
+agent loop) was only ever experienced *through* a Player's campaign. This release
+adds a sibling application that lets you **watch the world directly** — an
+"ant farm" with no Player character, where you observe a flat ensemble of living
+NPCs pursue goals and collide on a map, advance time on demand, peek behind a
+curtain at their secrets, and reach in with a "god hand." It lives entirely under
+a new top-level **`app/`** and reuses the engine's deterministic core rather than
+re-implementing it.
+
+- **Deterministic engine, ported onto SQLite (`app/backend/engine/`).** The pure
+  algorithms from `Tools/world_tick.py`, `ledger.py`, `social.py`,
+  `world_scribe.py`, and `dice.py` are ported verbatim onto a shared `Agent`
+  adapter, with state in SQLite instead of markdown. The one deliberate change:
+  collision rule (c) "player-pressure" is dropped (an ant farm has no Player). A
+  **keystone parity test** feeds identical fixtures to the legacy `Tools/` code
+  and the new engine and asserts byte-identical output — so the port provably
+  preserves the engine's auditable fairness.
+- **Generative tier on the Anthropic SDK (`app/backend/directors/`).** The four
+  subagents become structured-output (forced tool-use) API calls — Opus pivot
+  director + architect, Sonnet everyday director + blind npc-actor — ported from
+  `.claude/agents/*.md`. The secrecy firewall is enforced at prompt assembly: the
+  actor is built only from actor-safe columns and stays blind even though the
+  *observer* can be omniscient.
+- **FastAPI + React SPA.** A curtain-gated read API (the split enforced at the
+  data layer, not just the UI), an SSE tick that streams the deterministic beat
+  then each director pass, a god-hand (inject / nudge / whisper / move / kill),
+  and a schematic map / inspector / feed / pressure / wizard front-end. A
+  deterministic demo-world seeder makes the whole app runnable **with no API key**.
+- **Runs and tests green offline.** 12 backend tests pass (parity, orchestrator,
+  director apply + actor firewall, full API + curtain); the front-end builds
+  clean. See `app/README.md` to run it.
+
+### Campaign migration
+- **None required. The Ant Farm is additive and entirely separate from campaign
+  play** — it touches no `Game/`, `Cast/`, or `Character/` save data, and a
+  campaign that never opens `app/` is wholly unaffected. The app's runtime store
+  (`app/antfarm.db`) and front-end build artifacts are gitignored, so an engine
+  update (`git checkout engine/main -- app …`) restores the app *source* without
+  disturbing any worlds you've created. See `UPDATING.md` for the new bucket entry.
+
 ## 2.9.0 — 2026-06-17
 
 ### Added — the living-world dashboard (author god-view console)

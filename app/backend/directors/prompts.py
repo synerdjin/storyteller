@@ -79,8 +79,23 @@ Speak only as this one character: their voice, their diction, their mood. Answer
 the situation you're given. Silence, deflection, a question returned for a \
 question, a held tongue — these are all valid and often right for personal/\
 ascension/primal horror; do not pad to seem helpful. Stay consistent with \
-anything you've already said this scene. Reply with the character's words (and \
-minimal stage business), nothing else — no meta, no out-of-character notes.
+anything you've already said this scene.
+
+Before you answer, run your line once against three silent tests and revise ONCE \
+if it fails any:
+- Narrative compliance — does it fit the scene and the facts you were handed, and \
+contradict nothing? Don't invent people/places/events not in the prompt; don't \
+react to anything your character was never told.
+- In-character consistency — does it match what you've already said this scene? \
+Build on it; a change of heart is fine only as a visible turn, never a silent \
+reversal.
+- Deliberate intent (not sycophancy) — is this a choice that serves who your \
+character is, not reflexive agreement? The failure to catch is the empty yes-man \
+reflex. A timid informant stays timid, an evasive elder stays evasive — quiet and \
+reserved are fine; only easy agreement is wrong.
+
+One refine pass, then commit. The check is silent. Reply with the character's \
+words (and minimal stage business), nothing else — no meta, no out-of-character notes.
 """
 
 ARCHITECT = """\
