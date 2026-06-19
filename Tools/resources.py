@@ -45,6 +45,18 @@ DAMAGE_MARKS = {"bashing": "●", "lethal": "/", "aggravated": "*"}
 MARK_EMPTY = "○"
 MARK_SEVERITY = {"○": 0, "●": 1, "/": 2, "*": 3}
 
+# ASCII fallbacks for console output. The sheet *file* keeps the real glyphs
+# (it's written UTF-8); but `--show` prints to the terminal, which on Windows is
+# cp1252 and cannot encode ● / ○ — so console rendering translates them. Keep
+# every value here ASCII-only so `--show` can never crash on a stock console.
+_ASCII_GLYPH = {"●": "#", "○": ".", "/": "/", "*": "*"}
+
+
+def _ascii(s):
+    """Translate display glyphs to ASCII so console output survives cp1252."""
+    return "".join(_ASCII_GLYPH.get(ch, ch) for ch in s)
+
+
 # Pool name normalisation
 POOL_ALIASES = {
     "wp": "wp", "willpower": "wp",
@@ -414,11 +426,16 @@ def _pool_get_set(sheet, pool):
 
 # ── Operations ────────────────────────────────────────────────────────────────
 
-def op_show(sheet):
+def render_show(sheet):
+    """Build the `--show` report as an ASCII-safe string.
+
+    Returns ASCII only (no ● / ○) so it can be printed to a cp1252 console
+    without crashing. The sheet *file* still stores the real glyphs.
+    """
     lines = []
     if sheet.wp_rating is not None:
-        pips = _pips(sheet.wp_current, sheet.wp_rating)
-        lines.append(f"Willpower:    {pips} ({sheet.wp_current}/{sheet.wp_rating})")
+        pips = _ascii(_pips(sheet.wp_current, sheet.wp_rating))
+        lines.append(f"Willpower:    [{pips}] ({sheet.wp_current}/{sheet.wp_rating})")
     if sheet.quint is not None:
         lines.append(f"Quintessence: {sheet.quint} / {sheet.quint_max}")
     if sheet.paradox is not None:
@@ -430,7 +447,7 @@ def op_show(sheet):
             mx_str = f" / {mx}" if mx is not None else ""
             lines.append(f"{pool.title():<14}{val}{mx_str}")
     lines.append("\nHealth:")
-    lines.append(sheet.health_summary())
+    lines.append(_ascii(sheet.health_summary()))
     wp = sheet.wound_penalty()
     if wp is None:
         lines.append("\nStatus: INCAPACITATED")
@@ -438,7 +455,11 @@ def op_show(sheet):
         lines.append(f"\nWound penalty: {wp} dice")
     else:
         lines.append("\nWound penalty: none")
-    print("\n".join(lines))
+    return "\n".join(lines)
+
+
+def op_show(sheet):
+    print(render_show(sheet))
 
 
 def op_spend(sheet, pool, amount, day, reason, log_path, dry_run):
@@ -464,7 +485,7 @@ def op_gain(sheet, pool, amount, day, reason, log_path, dry_run):
     capped = mx is not None and new > mx
     if capped:
         new = mx
-    label = f"{pool.upper()} {cur}->{new} (gain {amount}" + (" — capped at max" if capped else "") + ")"
+    label = f"{pool.upper()} {cur}->{new} (gain {amount}" + (" -- capped at max" if capped else "") + ")"
     if reason:
         label += f" -- {reason}"
     tag = f"- [{_day_tag(day)}] {label}"
@@ -739,6 +760,16 @@ def _self_test():
             )
         except ImportError:
             pass  # memory_index not importable in isolated test environment
+
+        # ── 9. `--show` output is ASCII-safe (cp1252 console can't crash) ─────
+        s9 = make_sheet()
+        s9.mark_health("bashing", 1)   # marks Bruised with ● in the file
+        report = render_show(s9)
+        assert report.isascii(), f"render_show must be ASCII-only; got: {report!r}"
+        # encoding to cp1252 must not raise (the actual crash this guards against)
+        report.encode("cp1252")
+        # but the file itself keeps the real glyphs
+        assert "●" in s9.text(), "the sheet file must still store the real glyph"
 
     print("resources self-test: OK")
     return 0

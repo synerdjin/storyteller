@@ -173,18 +173,25 @@ def assemble(name, root, scene=None, recent=None, stance=None, said=None,
 
     day_line = f"Day {day}" if day is not None else "Day ? (unknown -- check current-scene.md)"
 
-    # Optional retrieval pass (scope=public guarantees no secret chunks)
+    # Optional retrieval pass. scope="public" guarantees no secret chunks; mode
+    # "lexical" (BM25) needs no local model, so the briefing works offline. The
+    # result is a list of (score, record) tuples; record["text"] is the chunk.
     retrieval_block = ""
     if retrieve and _HAS_SEARCH and scene:
         try:
-            hits = _ms.search(scene, scope="public", owner=name, top_k=3, mode="lexical")
+            hits = _ms.search_text(root, scene, scope="public", owner=name,
+                                   k=3, mode="lexical")
             if hits:
                 snippets = "\n".join(
-                    f"- {h.get('text', '').strip()[:140]}" for h in hits[:3]
+                    f"- {' '.join(rec.get('text', '').split())[:140]}"
+                    for _score, rec in hits[:3]
                 )
                 retrieval_block = _RETRIEVAL_SECTION.format(hits=snippets)
-        except Exception:
-            pass  # retrieval is a bonus; never fail the briefing because of it
+        except Exception as exc:
+            # Retrieval is a bonus; never fail the briefing. But surface the
+            # cause on stderr so a broken retrieval can't hide silently again.
+            print(f"actor_brief: retrieval skipped ({type(exc).__name__}: {exc})",
+                  file=sys.stderr)
 
     # Build the optional sections in reading order
     extra = ""

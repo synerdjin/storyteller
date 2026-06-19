@@ -11,6 +11,23 @@ Version numbers are `MAJOR.MINOR.PATCH`:
 
 ---
 
+## 2.11.1 — 2026-06-19
+
+### Fixed — review findings from v2.10.0 / v2.11.0
+
+A retrospective Opus review of PRs #15 and #16 surfaced two real defects (both verified by reproduction) and two doc-accuracy gaps. The firewall *security* core was unaffected — these are an availability bug and a dead code path, not secret leaks.
+
+- **`resources.py --show` crashed on a stock Windows console (Critical).** The Willpower pip string (`●●●●●○○○○○`) and Health glyphs were printed straight to stdout, which on Windows is cp1252 and cannot encode `●`/`○` — so the most-used command (`"what are my current pools?"`) raised `UnicodeEncodeError`. Console output now renders ASCII (`[#####.....] (5/10)`, `#`/`/`/`*`/`.` for Health); the sheet **file** still stores the real glyphs (it's UTF-8). New `render_show()` is testable, and `--self-test` assertion #9 encodes the output to cp1252 so the crash can't regress.
+- **`actor_brief.py` retrieval was dead code (Major).** The optional "Relevant context" pass called `memory_search.search(scene, …, top_k=3, mode="lexical")` — wrong function and wrong signature (`search` takes `(root, query_vec, …)` with no `top_k`/`mode`), so it raised `TypeError` 100% of the time and was swallowed by a bare `except: pass`. Fixed to call `search_text(root, scene, scope="public", owner=name, k=3, mode="lexical")`, adapt the `(score, record)` result shape, and log the cause to stderr instead of hiding it.
+- **`firewall.append_observation` is now genuinely atomic.** Writes stage to a temp file and `replace()` into place, so a crash mid-write can't truncate a learner's `memory.md` (the docs already claimed atomic; now it's true).
+- **`gather_secrets` scope documented.** Its docstring now states the boundary explicitly: it covers the per-Cast-agent corpus (drives.md + secrets.md), **not** campaign-level secret files (`gm-secrets.md`, hidden `developments.md`, `plots.md` prose). Upstream discipline (a fixed, goal-free headline) remains the primary defense.
+- **Nit:** `op_gain`'s capped-at-max label uses `--` instead of an em-dash (cp1252-safe, consistent with the rest of the log format).
+
+### Campaign migration (none required)
+Pure engine-file fixes; no save-data changes.
+
+---
+
 ## 2.11.0 — 2026-06-19
 
 ### Added — firewall-safe actor pipeline (`Tools/firewall.py` + `Tools/actor_brief.py`)
