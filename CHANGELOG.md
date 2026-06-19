@@ -11,6 +11,23 @@ Version numbers are `MAJOR.MINOR.PATCH`:
 
 ---
 
+## 2.12.0 — 2026-06-19
+
+### Living-world hygiene — three fixes drawn from a live campaign
+
+Three independent improvements that each remove a place the GM had to babysit the living world by hand: a manifest that repeated itself, directors coloring outside the lines, and a false positive in the very audit meant to build trust.
+
+**Collision cooldown / tick debounce (`world_tick.py`).** A standing rivalry's relationship edges never go away, so `detect_interactions` re-found — and re-queued — the same collisions on *every* tick (in play: the same three rivalries, beat after beat). The metronome now carries a **per-collision cooldown**: once a collision fires, it's suppressed for the next **N** ticks (`--cooldown`, default 3; `0` disables and restores the old every-tick behavior) — *unless* it genuinely escalates: a ledger phase climbing toward `climax` (a `climax` always surfaces), a brand-new contested target, or a fresh hostile edge. Debounce state is tool-owned and deterministic, persisted to `Game/.world-cooldowns.json` (gitignored, rebuildable). Detection now runs uncapped → ledgers → debounce → `--max` cap, so a suppressed simmering rivalry never eats a queue slot a genuinely-moving collision could use. Self-test covers suppress-window, re-surface, escalation-override, and `--cooldown 0` back-compat.
+
+**Director guardrails against pre-narration (`world-director.md`, `world-director-lite.md`, `world_health.py`).** Directors are meant to stage *conditions* off-screen, not resolve the Player's scenes — but twice a director wrote `developments.md` / `memory.md` as if an un-played scene had already happened (a future-tense beat, the PC's actions authored for them). Both director prompts now carry explicit bullets: stage conditions not outcomes; never write a player-facing event in past/future tense unless it's in `timeline.md`; `Surface: now` is live pressure, not a pre-played result; never author the Player character; when in doubt write intent, not event. Backing them: a new **director-discipline lint** in `world_health.py` (deterministic, dependency-free, warnings only) that flags a named scene absent from `timeline.md`, future-tense player-facing narration, or the PC authored as an actor. It scans only director-authored regions — all of `developments.md`, and the "What I've learned about others" section of each `memory.md` (never the character's own `## Log` of played history).
+
+**`world_health.py` Surface-parse bugfix.** The `Surface: now` backlog check substring-matched the word "now" anywhere in the line, so `- Surface: hidden *(…ripens, not now)*` and `- Surface: hidden (nothing perceptible now)` were false-flagged as un-drained `now` beats (in play: "4 un-drained" when only one was genuinely `now`). It now parses the **Surface value** — the token immediately after `Surface:` — and matches `== "now"`, ignoring any trailing parenthetical or prose. Regression self-test covers the `hidden`/`soon`-with-"now"-in-prose cases.
+
+### Campaign migration (none required)
+Additive; no save-data changes. `Game/.world-cooldowns.json` is a new tool-owned, gitignored artifact that rebuilds itself. The director lint is a session-end nudge with no new files.
+
+---
+
 ## 2.11.1 — 2026-06-19
 
 ### Fixed — review findings from v2.10.0 / v2.11.0

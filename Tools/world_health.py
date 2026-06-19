@@ -104,7 +104,7 @@ def parse_plots(text):
             "title": title,
             "state": (_bullet(block, "State") or "").lower(),
             "involvement": (_bullet(block, "Player involvement") or "").lower(),
-            "surface": (_bullet(block, "Surface") or "").lower(),
+            "surface": _surface_value(_bullet(block, "Surface")),
             "opened": _first_day(_bullet(block, "Opened") or ""),
         })
     return out
@@ -145,7 +145,7 @@ def parse_developments(text):
         out.append({
             "day": _first_day(head),
             "headline": head.lstrip("# ").strip(),
-            "surface": (_bullet(block, "Surface") or "").lower(),
+            "surface": _surface_value(_bullet(block, "Surface")),
             # Trust ONLY the explicit `- Drained:` bullet. A loose substring on
             # the headline would mis-read "the drained well" as a drained entry.
             "drained": drained.startswith("y") or drained == "drained",
@@ -156,6 +156,20 @@ def parse_developments(text):
 def _first_day(s):
     m = _DAY.search(s or "")
     return int(m.group(1)) if m else None
+
+
+def _surface_value(raw):
+    """The Surface *token* (now / soon / hidden), ignoring any trailing prose.
+
+    `_bullet` hands us the whole value after `Surface:`, which may carry a
+    parenthetical or prose — e.g. `hidden *(…ripens, not now)*` or
+    `now (trigger: the festival)`. A naive substring test for "now" then
+    false-flags a `hidden` entry whose prose merely contains the word "now".
+    We take only the leading token (up to the first space, `(`, or `*`) and
+    lower-case it, so the match is on the Surface *value*, never the prose.
+    """
+    token = re.split(r"[\s(*]", (raw or "").strip(), maxsplit=1)[0]
+    return token.strip().lower()
 
 
 def last_seen_day(name, *texts):
@@ -209,6 +223,7 @@ def assess(root, stale_days):
     seeded = bool(agents) or bool(plots)
     rep = {"day": day, "n_agents": len(agents), "seeded": seeded,
            "progression": [], "collision": [], "threads": [], "backlog": [],
+           "director": director_lint(root),
            "firewall": firewall_scan(root, agents), "tone": None}
 
     # --- (1) Goal progression: is each living agent actually moving? ---------
@@ -264,7 +279,7 @@ def assess(root, stale_days):
             rep["threads"].append(
                 ("warn", f"thread open since Day {th['opened']} "
                          f"({day - th['opened']} days), still unresolved: {th['text'][:70]}"))
-    pending_now = [d for d in devs if "now" in d["surface"] and not d["drained"]]
+    pending_now = [d for d in devs if d["surface"] == "now" and not d["drained"]]
     if pending_now:
         rep["backlog"].append(
             ("warn", f"{len(pending_now)} `Surface: now` development(s) never drained "
@@ -373,6 +388,163 @@ def firewall_scan(root, agents):
                     f"Cast/{owner}/memory.md echoes {src_name}'s secret text "
                     f"(goal / relationship note / agenda / reflection / secrets) "
                     f"— a firewall leak. Scrub the offending line(s)."))
+    return findings
+
+
+# --------------------------------------------------------------------------- #
+# Director discipline lint — a heuristic nudge against pre-narration.
+#
+# Directors stage *conditions and off-screen consequences*; they must never
+# resolve, pre-narrate, or author a scene the Player will play — and never put
+# words or actions in the Player character's mouth. This lint flags staged
+# `developments.md` entries and the director/propagation-written observation
+# lines in `Cast/*/memory.md` that look like pre-narration. It is deliberately
+# heuristic (warnings only; the GM adjudicates), the same nudge-not-gate stance
+# as the rest of world_health. It scans only director-authored regions: all of
+# developments.md, and the "What I've learned about others" section of a
+# memory.md — never the character's own `## Log` of already-played history.
+# --------------------------------------------------------------------------- #
+
+_OBS_HEADING = "## What I've learned about others"
+# A named set-piece a development shouldn't be narrating before it's played.
+_SCENE_RE = re.compile(
+    r"\b(?:the|a|an)\s+[\w'’-]+(?:\s+[\w'’-]+){0,2}?\s+"
+    r"(scene|dream|flashback|interlude|montage)\b", re.IGNORECASE)
+# Future-tense, player-facing narration (gated on the PC being in the line).
+_FUTURE_RE = re.compile(r"\b(will|won't|about to|going to|would soon|shall)\b",
+                        re.IGNORECASE)
+# Verbs that, with the PC as subject, mean the director authored the Player.
+_PC_VERBS = (
+    "said", "says", "whispered", "whispers", "murmured", "murmurs", "replied",
+    "replies", "answered", "answers", "asked", "asks", "decided", "decides",
+    "drew", "draws", "reached", "reaches", "felt", "feels", "thought", "thinks",
+    "drifted", "drifts", "drifting", "kissed", "kisses", "walked", "walks",
+    "stepped", "steps", "turned", "turns", "nodded", "nods", "smiled", "smiles",
+    "agreed", "agrees", "refused", "refuses", "chose", "chooses", "drank",
+    "drinks", "struck", "strikes", "ran", "runs", "slept", "sleeps", "wept",
+    "weeps", "laughed", "laughs", "fell", "falls", "moved", "moves", "grabbed",
+    "grabs", "pulled", "pulls", "leaned", "leans", "stood", "stands", "sat",
+    "sits", "lay", "kills", "killed", "fled", "flees",
+)
+
+
+def _pc_action_re(pc):
+    verbs = "|".join(_PC_VERBS)
+    # PC name, then within ~3 words a verb it governs (subject = PC). Ordering
+    # (name before verb) keeps "moves on Daniel" — PC as *object* — from matching.
+    return re.compile(
+        r"\b" + re.escape(pc) + r"\b(?:\s+\w+){0,3}?\s+(?:" + verbs + r")\b",
+        re.IGNORECASE)
+
+
+def _pc_name(root):
+    """Best-effort Player-character first name from Character/sheet.md (heuristic).
+
+    Returns None when not confidently found — the PC-authoring/future checks then
+    skip rather than guess and mis-flag. Honest about being a nudge.
+    """
+    text = _read(root, "Character/sheet.md")
+    name = None
+    for line in text.splitlines():
+        m = re.match(r"^#\s+(.+?)\s+[—–-]\s*SHEET", line.strip(), re.IGNORECASE)
+        if m:
+            name = m.group(1)
+            break
+    if not name:
+        m = re.search(r"^\s*[-*]?\s*\*{0,2}Name\*{0,2}\s*:\s*(.+)$",
+                      text, re.IGNORECASE | re.MULTILINE)
+        if m:
+            name = m.group(1)
+    if not name:
+        return None
+    name = re.sub(r"[*_`]", "", name).strip()
+    name = re.split(r"[,—–(]", name)[0].strip()  # drop trailing concept/pronouns
+    if not name or name.startswith("<") or _PLACEHOLDER.match(name):
+        return None
+    first = name.split()[0]
+    return first if first and first[0].isalpha() else None
+
+
+def _observation_lines(text):
+    """Lines under '## What I've learned about others' (director/propagation-
+    written), excluding the character's own '## Log' of played history."""
+    out, grab = [], False
+    for line in text.splitlines():
+        s = line.strip()
+        if s == _OBS_HEADING:
+            grab = True
+            continue
+        if grab and s.startswith("## "):
+            grab = False
+        if grab and s:
+            out.append(line)
+    return out
+
+
+def _development_entry_lines(text):
+    """Lines inside dated `## [Day N …]` entries (heading + body), skipping the
+    file's instructional preamble and the Surface-timing legend — only real
+    staged content is linted, not the template's own scaffolding."""
+    lines = _strip_fences(text).splitlines()
+    heads = [i for i, l in enumerate(lines)
+             if re.match(r"^##\s+\[Day\s+\d+", l, re.IGNORECASE)]
+    out = []
+    for k, start in enumerate(heads):
+        end = heads[k + 1] if k + 1 < len(heads) else len(lines)
+        out.extend(lines[start:end])
+    return out
+
+
+def director_lint(root, pc_name=None):
+    """Flag staged entries that look like pre-narration. Warnings only.
+
+    Three heuristics, in priority order per line:
+      (c) the Player character is the subject of an action verb — directors
+          never author the PC;
+      (b) future-tense, player-facing narration (the PC is named in the line);
+      (a) a named scene/dream/flashback that doesn't appear in timeline.md yet
+          (likely un-played, and being narrated as if it had happened).
+    """
+    root = Path(root)
+    if pc_name is None:
+        pc_name = _pc_name(root)
+    timeline = _read(root, "Game/timeline.md").lower()
+    pc_re = _pc_action_re(pc_name) if pc_name else None
+    pc_low = pc_name.lower() if pc_name else None
+    findings = []
+
+    def check(rel, line):
+        s = line.strip()
+        if not s or s.startswith(">") or _PLACEHOLDER.match(s):
+            return
+        if pc_re and pc_re.search(s):
+            findings.append((
+                "warn", f"{rel}: stages an action for the Player character "
+                        f"(`{pc_name}`) — stage the world *around* the PC, never "
+                        f"author the PC: \"{s[:90]}\""))
+        elif pc_low and pc_low in s.lower() and _FUTURE_RE.search(s):
+            findings.append((
+                "warn", f"{rel}: pre-narrates a Player scene in the future tense — "
+                        f"stage intent/positioning, not an outcome the Player "
+                        f"hasn't played: \"{s[:90]}\""))
+        else:
+            m = _SCENE_RE.search(s)
+            if m and m.group(0).lower() not in timeline:
+                findings.append((
+                    "warn", f"{rel}: names a scene not in timeline.md (un-played?) "
+                            f"— don't pre-narrate it: \"{m.group(0)}\""))
+
+    for line in _development_entry_lines(_read(root, "Game/developments.md")):
+        check("developments.md", line)
+    for mem in sorted((root / "Cast").glob("*/memory.md")):
+        if mem.parent.name.startswith("_"):
+            continue
+        try:
+            text = mem.read_text(encoding="utf-8")
+        except Exception:
+            continue
+        for line in _observation_lines(text):
+            check(f"Cast/{mem.parent.name}/memory.md", line)
     return findings
 
 
@@ -502,7 +674,7 @@ def _section(out, title, findings):
 
 def format_report(rep, tone):
     warns = sum(1 for grp in ("progression", "collision", "threads", "backlog",
-                              "firewall")
+                              "director", "firewall")
                 for sev, _ in rep[grp] if sev == "warn")
     out = [
         "# World health (GM ONLY)",
@@ -529,6 +701,8 @@ def format_report(rep, tone):
         out.append("")
     _section(out, "Threads (is the Player's view going stale?)", rep["threads"])
     _section(out, "Developments backlog", rep["backlog"])
+    _section(out, "Director discipline (no pre-narration / no authoring the PC)",
+             rep.get("director") or [])
     _section(out, "Firewall (no secret goal/success text in actor memory)",
              rep.get("firewall") or [])
     out.append("## Tone & compliance (optional local read)")
@@ -643,8 +817,81 @@ def _self_test():
         "- What happened.\n- Surface: now\n- Drained: no\n"
         "## [Day 1 — dawn] — mara: old news\n- Surface: now\n- Drained: yes\n")
     assert len(devs) == 2
-    nows = [d for d in devs if "now" in d["surface"] and not d["drained"]]
+    nows = [d for d in devs if d["surface"] == "now" and not d["drained"]]
     assert len(nows) == 1 and nows[0]["day"] == 3
+
+    # --- Surface-value parse (regression): the token, not a substring of prose --
+    assert _surface_value("now") == "now"
+    assert _surface_value("now (trigger: the festival)") == "now"      # trailing note
+    assert _surface_value("hidden *(…ripens toward rung two, not now)*") == "hidden"
+    assert _surface_value("hidden (nothing perceptible now)") == "hidden"
+    assert _surface_value("soon (… happens now-ish)") == "soon"
+    assert _surface_value(None) == "" and _surface_value("") == ""
+    # end-to-end: a `hidden` entry whose prose contains "now" must NOT be counted.
+    bug = parse_developments(
+        "## [Day 5 — dusk] — sabine: the plan ripens\n"
+        "- Surface: hidden *(ripens toward rung two, not now)*\n- Drained: no\n"
+        "## [Day 5 — dusk] — mara: presses now\n"
+        "- Surface: now (trigger: the vote)\n- Drained: no\n"
+        "## [Day 5 — dusk] — lucien: bides his time\n"
+        "- Surface: soon (… happens now-ish)\n- Drained: no\n")
+    real_nows = [d for d in bug if d["surface"] == "now" and not d["drained"]]
+    assert len(real_nows) == 1, [d["surface"] for d in bug]   # was 3 before the fix
+    assert real_nows[0]["headline"].endswith("presses now")
+
+    # --- director discipline lint (no pre-narration / no authoring the PC) ----
+    import tempfile
+    with tempfile.TemporaryDirectory() as d:
+        root = Path(d)
+        (root / "Game").mkdir(parents=True)
+        (root / "Game" / "timeline.md").write_text(
+            "## Timeline\n- [Day 4] Met Diana at the docks.\n", encoding="utf-8")
+        (root / "Game" / "developments.md").write_text(
+            "## [Day 5 — dusk] — vance: presses toward the council seat\n"
+            "- Stages intent; clock now 4/6.\n"
+            "## [Day 5 — dusk] — diana: pre-narration creeps in\n"
+            "- Daniel drew his blade and agreed to the pact.\n"
+            "- During the going-home scene, Daniel will drift toward sleep.\n"
+            "- Sets up a candlelight dream offstage.\n",
+            encoding="utf-8")
+        fnd = director_lint(root, pc_name="Daniel")
+        msgs = " || ".join(m for _, m in fnd)
+        assert all(s == "warn" for s, _ in fnd), fnd          # warnings only
+        # (c) the PC as the subject of an action verb is flagged
+        assert any("Player character" in m and "drew his blade" in m
+                   for _, m in fnd), msgs
+        # (b) a future-tense player-facing scene is flagged
+        assert any("future tense" in m for _, m in fnd), msgs
+        # (a) a named scene not in timeline.md is flagged
+        assert any("not in timeline" in m and "candlelight dream" in m
+                   for _, m in fnd), msgs
+        # clean NPC staging (intent / off-screen) is NOT flagged
+        assert not any("council seat" in m or "clock now 4/6" in m
+                       for _, m in fnd), msgs
+        # with no PC name, the PC-specific checks skip gracefully (still does (a))
+        nopc = director_lint(root, pc_name=None)
+        assert not any("Player character" in m for _, m in nopc), nopc
+        assert any("candlelight dream" in m for _, m in nopc), nopc
+
+    # observation-section scoping: a played interaction in the NPC's own ## Log
+    # must NOT be linted (only director-written observations are), even if it
+    # names the PC as an actor.
+    obs = _observation_lines(
+        "# kira — memory\n\n## Log\n- [Day 3] Daniel drew his blade in my parlor.\n"
+        "\n## What I've learned about others\n"
+        "- *[Day 4]* — about `vance`: pressed toward the seat.\n")
+    assert len(obs) == 1 and "vance" in obs[0] and "Daniel drew" not in " ".join(obs)
+
+    # PC-name heuristic reads a `# <Name> — SHEET` heading, skips the template.
+    with tempfile.TemporaryDirectory() as d:
+        root = Path(d)
+        (root / "Character").mkdir(parents=True)
+        (root / "Character" / "sheet.md").write_text(
+            "# Daniel Vass — SHEET (GM ONLY)\n\n## At a glance\n", encoding="utf-8")
+        assert _pc_name(root) == "Daniel"
+        (root / "Character" / "sheet.md").write_text(
+            "# <Name> — SHEET (GM ONLY)\n", encoding="utf-8")
+        assert _pc_name(root) is None    # template placeholder → no guess
 
     assert last_seen_day("vance", "Day 3 vance did a thing\nDay 7 nothing\n"
                                   "Day 5 Vance again") == 5

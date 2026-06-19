@@ -19,6 +19,8 @@ Usage:
     python world_tick.py --dawdle        # the Player stalled; 'dawdle' clocks tick
     python world_tick.py --fail          # a roll failed forward; 'on_fail' clocks tick
     python world_tick.py --max 3         # cap how many agents are queued (default 3)
+    python world_tick.py --cooldown 3    # suppress a collision for N ticks after it fires
+    python world_tick.py --cooldown 0    # disable the cooldown (every-tick behavior)
     python world_tick.py --dry-run       # compute & print, but DON'T write any files
     python world_tick.py --self-test     # run built-in assertions and exit
 
@@ -31,6 +33,8 @@ What it writes:
     - the advanced `state:`/`clock:` values, surgically, back into those same files
       (comments and prose untouched)
     - Game/.world-tick-queue.md — the hand-off for the world-director subagent
+    - Game/.world-cooldowns.json — tool-owned debounce state (which collisions
+      fired on which tick), so a standing rivalry doesn't re-queue every beat
 
 Block shape (the controlled YAML subset this parses):
     living: true
@@ -46,6 +50,7 @@ Block shape (the controlled YAML subset this parses):
 """
 
 import argparse
+import json
 import re
 import sys
 from pathlib import Path
@@ -584,6 +589,106 @@ def apply_ledgers(root, agents, interactions, dry_run):
 
 
 # --------------------------------------------------------------------------- #
+# Collision cooldown — the debounce that keeps the manifest meaningful.
+#
+# A standing rivalry's relationship edges never go away, so detect_interactions
+# re-finds the same collision on EVERY tick. Left alone, the hand-off manifest
+# fills with the same three simmering rivalries beat after beat, and the GM has
+# to hand-ration the (expensive) director work. This adds a per-collision
+# cooldown: once a collision fires, it's suppressed for the next N ticks — UNLESS
+# it genuinely escalates (a ledger phase climbing forming→rising→climax, a brand-
+# new contested target, a fresh hostile edge). Routine contention surfaces on a
+# cadence; real escalation always gets through. Fully deterministic, tool-owned.
+# --------------------------------------------------------------------------- #
+
+_PHASE_RANK = {"forming": 1, "rising": 2, "climax": 3}
+_CLIMAX_RANK = _PHASE_RANK["climax"]
+_COOLDOWN_FILE = "Game/.world-cooldowns.json"
+
+
+def _cool_key(it):
+    """A stable string id for a collision: kind + sorted parties + contested id.
+
+    Matches Interaction.key()'s identity (sorted participants + target), so the
+    same standing rivalry maps to the same record tick after tick.
+    """
+    names = ",".join(sorted([it.a.name, it.b.name if it.b else "player"]))
+    return f"{it.kind}|{names}|{it.over or ''}"
+
+
+def _phase_rank(phase):
+    return _PHASE_RANK.get(str(phase or "").strip().lower(), 0)
+
+
+def load_cooldowns(root):
+    """Read the tool-owned debounce state (or an empty store)."""
+    p = Path(root) / _COOLDOWN_FILE
+    if p.exists():
+        try:
+            data = json.loads(p.read_text(encoding="utf-8"))
+            if isinstance(data, dict):
+                return data
+        except Exception:
+            pass  # a corrupt cooldown file must never crash a tick — start fresh
+    return {}
+
+
+def save_cooldowns(root, store):
+    p = Path(root) / _COOLDOWN_FILE
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text(json.dumps(store, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+
+def filter_cooldown(root, interactions, cooldown, dry_run, store=None):
+    """Suppress collisions that fired within the last `cooldown` ticks.
+
+    A collision surfaces this tick when ANY of these hold:
+      - it is brand new (no record — a fresh target or fresh edge),
+      - the cooldown window has elapsed (`ticks_since_fired > cooldown`),
+      - it is at `climax` (a climax always surfaces, cooldown or not),
+      - its ledger phase escalated since it last fired (rising > forming, …).
+
+    `cooldown <= 0` disables the debounce entirely (every collision surfaces —
+    today's behavior, kept for back-compat). The global tick counter advances on
+    every real (non-dry-run) call, even when nothing collided, so the window is
+    measured in ticks rather than wall-clock. Returns the surfaced subset, in the
+    same order it was given; persists the store unless `dry_run`.
+    """
+    if store is None:
+        store = load_cooldowns(root)
+    cols = store.setdefault("collisions", {})
+    tick_no = int(store.get("tick", 0)) + 1
+
+    surfaced = []
+    for it in interactions:
+        if cooldown <= 0:
+            surfaced.append(it)
+            continue
+        rec = cols.get(_cool_key(it))
+        rank = _phase_rank(it.phase)
+        if rec is None:
+            surfaced.append(it)                       # brand-new contention
+            continue
+        since = tick_no - int(rec.get("fired", 0))
+        escalated = rank > int(rec.get("phase_rank", 0))
+        if since > cooldown or rank >= _CLIMAX_RANK or escalated:
+            surfaced.append(it)
+        # otherwise: on cooldown, suppressed — leave its record untouched so the
+        # window keeps measuring from the last time it actually surfaced.
+
+    for it in surfaced:
+        cols[_cool_key(it)] = {
+            "fired": tick_no,
+            "phase": (str(it.phase).lower() if it.phase else None),
+            "phase_rank": _phase_rank(it.phase),
+        }
+    store["tick"] = tick_no
+    if not dry_run:
+        save_cooldowns(root, store)
+    return surfaced
+
+
+# --------------------------------------------------------------------------- #
 # Surgical write-back: rewrite ONLY the state: and clock: lines within a
 # block's span, preserving comments, prose, and every other line.
 # --------------------------------------------------------------------------- #
@@ -781,8 +886,13 @@ def run(root, args):
         key=lambda a: (-priority(a), a.name),
     )
     selected = candidates[: args.max]
-    interactions = detect_interactions(agents, args.max)
+    # Detect uncapped, advance ledgers (so every contested entity's phase is known
+    # for the escalation check), debounce, THEN cap — so a suppressed simmering
+    # rivalry never eats a queue slot a genuinely-moving collision could have used.
+    interactions = detect_interactions(agents)
     apply_ledgers(root, agents, interactions, args.dry_run)
+    interactions = filter_cooldown(root, interactions, args.cooldown, args.dry_run)
+    interactions = interactions[: args.max]
     # An agent is "due for reflection" when it completes a phase (FSM transition)
     # or culminates a clock — natural beats to synthesise what it has learned.
     reflectors = [a for a in agents if a.transitioned or a.became_full][: args.max]
@@ -814,6 +924,9 @@ def main(argv):
                    help="a roll failed forward — advance 'on_fail' clocks")
     p.add_argument("--max", type=int, default=3,
                    help="max agents to queue for deliberation (default 3)")
+    p.add_argument("--cooldown", type=int, default=3,
+                   help="suppress a collision for N ticks after it fires, unless it "
+                        "escalates (default 3; 0 disables — every-tick behavior)")
     p.add_argument("--dry-run", action="store_true",
                    help="compute and print, but write no files")
     p.add_argument("--self-test", action="store_true",
@@ -904,7 +1017,7 @@ def _self_test():
             "advances_when: always\n---\n", encoding="utf-8")
 
         class A:  # minimal args
-            elapsed, dawdle, fail, max, dry_run = 1, True, False, 3, False
+            elapsed, dawdle, fail, max, cooldown, dry_run = 1, True, False, 3, 3, False
 
         run(root, A())
 
@@ -993,6 +1106,58 @@ def _self_test():
                 apply_ledgers(root2, [mara, vance2], detect_interactions([mara, vance2]),
                               dry_run=True)
                 assert not (root2 / "Game" / "ledgers.md").exists(), "dry-run writes nothing"
+
+    # --- collision cooldown / tick debounce ---------------------------------
+    def _col(a_, b_, over="press", phase=None):
+        it = Interaction("contested-goal", a_, b_, over, "why", None)
+        it.phase = phase
+        return it
+
+    kira = _mk("kira", "living: true\nstate: s\n")
+    weiss = _mk("weiss", "living: true\nstate: s\n")
+
+    with tempfile.TemporaryDirectory() as d:
+        root = Path(d)
+        (root / "Game").mkdir(parents=True)
+        # (1) fires at tick T; (2) suppressed at T+1..T+N with no phase change.
+        assert len(filter_cooldown(root, [_col(kira, weiss)], 3, False)) == 1, "fires first time"
+        for k in range(3):
+            assert filter_cooldown(root, [_col(kira, weiss)], 3, False) == [], \
+                f"suppressed during cooldown (tick T+{k + 1})"
+        # (2) re-surfaces at T+N+1.
+        assert len(filter_cooldown(root, [_col(kira, weiss)], 3, False)) == 1, \
+            "re-surfaces after the cooldown window"
+        # and goes quiet again immediately after re-firing.
+        assert filter_cooldown(root, [_col(kira, weiss)], 3, False) == [], "back on cooldown"
+
+    with tempfile.TemporaryDirectory() as d:
+        root = Path(d)
+        (root / "Game").mkdir(parents=True)
+        # (3) escalation overrides cooldown.
+        assert len(filter_cooldown(root, [_col(kira, weiss, phase="rising")], 3, False)) == 1
+        assert filter_cooldown(root, [_col(kira, weiss, phase="rising")], 3, False) == [], \
+            "same phase within cooldown is suppressed"
+        assert len(filter_cooldown(root, [_col(kira, weiss, phase="climax")], 3, False)) == 1, \
+            "escalation to climax overrides the cooldown"
+        # a climax keeps surfacing every tick (a climax always surfaces).
+        assert len(filter_cooldown(root, [_col(kira, weiss, phase="climax")], 3, False)) == 1, \
+            "a standing climax surfaces every tick, cooldown or not"
+        # a brand-new contested target surfaces immediately even mid-cooldown.
+        assert len(filter_cooldown(root, [_col(kira, weiss, over="newseat")], 3, False)) == 1, \
+            "a fresh contested target is never on cooldown"
+
+    with tempfile.TemporaryDirectory() as d:
+        root = Path(d)
+        (root / "Game").mkdir(parents=True)
+        # (4) --cooldown 0 reproduces today's every-tick behavior (back-compat).
+        for _ in range(4):
+            assert len(filter_cooldown(root, [_col(kira, weiss)], 0, False)) == 1, \
+                "cooldown=0 disables the debounce: fires every tick"
+        # dry-run must not advance the persisted tick counter.
+        store = load_cooldowns(root)
+        tick_before = store.get("tick", 0)
+        filter_cooldown(root, [_col(kira, weiss)], 3, dry_run=True)
+        assert load_cooldowns(root).get("tick", 0) == tick_before, "dry-run persists nothing"
 
     print("world_tick self-test: OK")
     return 0
