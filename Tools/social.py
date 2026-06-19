@@ -55,6 +55,14 @@ try:
 except Exception:  # pragma: no cover
     ledger_mod = None
 
+# Fingerprint functions are the single source of truth in firewall.py (v2.11.0).
+# social.py re-exports them so callers that import from here still work.
+from firewall import (  # noqa: E402
+    HEADLINE_MAX, _OBS_HEADING,
+    _tokens, _shares_ngram, safe_headline, _forbidden_texts,
+    append_observation as _fw_append_observation,
+)
+
 
 def _group(agent):
     g = agent.fields.get("group")
@@ -143,9 +151,6 @@ def reputation(name, by_name, ledgers):
     return score
 
 
-_OBS_HEADING = "## What I've learned about others"
-
-
 def observation_line(day, participant, headline, hops):
     dl = f"Day {day}" if day is not None else "Day ?"
     how = "saw it first-hand" if hops <= 1 else "heard word"
@@ -153,108 +158,14 @@ def observation_line(day, participant, headline, hops):
 
 
 def append_observation(root, learner, day, participant, headline, hops):
-    """Append an actor-safe observation to a learner's memory.md."""
-    p = Path(root) / "Cast" / learner / "memory.md"
-    if not p.exists():
-        return False
-    text = p.read_text(encoding="utf-8")
+    """Append an actor-safe observation to a learner's memory.md.
+
+    Routes through firewall.append_observation (v2.11.0) — the sanctioned
+    write path that validates `text` against the full secret corpus before
+    writing. Preserves the same public signature for callers.
+    """
     line = observation_line(day, participant, headline, hops)
-    if line in text:
-        return False  # idempotent: don't double-record the same beat
-    if _OBS_HEADING in text:
-        idx = text.index(_OBS_HEADING)
-        nl = text.index("\n", idx)
-        text = text[:nl + 1] + line + "\n" + text[nl + 1:]
-    else:
-        text = text.rstrip() + f"\n\n{_OBS_HEADING}\n{line}\n"
-    p.write_text(text, encoding="utf-8")
-    return True
-
-
-# --------------------------------------------------------------------------- #
-# Firewall — defense-in-depth. This module writes into actor-safe save data, so
-# it validates headlines itself rather than trusting the caller. A headline that
-# echoes any living agent's secret goal/success text (or is implausibly long for
-# an abstract observation) is a leak and is dropped, never written.
-# --------------------------------------------------------------------------- #
-
-HEADLINE_MAX = 140              # a true *abstract* observation is short
-# Unicode-aware: `\w` keeps accented / Cyrillic / CJK letters, so a non-English
-# NPC name in a secret can't slip past the fingerprint by being tokenized away.
-_WORD = re.compile(r"\w+", re.UNICODE)
-
-
-def _tokens(s):
-    return _WORD.findall(str(s or "").lower())
-
-
-def _forbidden_texts(agents):
-    """Free-text spoiler fields from each living agent's drives front-matter: the
-    goal's `pursue`/`success` strings (or a legacy string goal), and every
-    relationship `note` (e.g. "the one person who can block the seat" — these are
-    GM-only and a real leak vector). The short `target` id is excluded on purpose
-    — it's a common word and would cause false rejects; the n-gram check below is
-    what catches verbatim copying.
-
-    Scope note: this reads only the *parsed front-matter* (`agent.fields`). The
-    prose body of drives.md (## Agenda, ## Reflection notes) and `secrets.md` are
-    NOT covered here — they are out of band for the per-post propagation guard.
-    The session-end `world_health.firewall_scan` is the place to widen coverage."""
-    out = []
-    items = agents.values() if isinstance(agents, dict) else (agents or [])
-    for a in items:
-        fields = getattr(a, "fields", {}) if a is not None else {}
-        g = fields.get("goal")
-        if isinstance(g, dict):
-            for k in ("pursue", "success"):
-                v = g.get(k)
-                if isinstance(v, str) and v.strip():
-                    out.append(v)
-        elif isinstance(g, str) and g.strip():
-            out.append(g)
-        rels = fields.get("relationships")
-        if isinstance(rels, dict):
-            for edge in rels.values():
-                note = edge.get("note") if isinstance(edge, dict) else None
-                if isinstance(note, str) and note.strip():
-                    out.append(note)
-    return out
-
-
-def _shares_ngram(text, forbidden, ngram=4):
-    """True if `text` shares a verbatim run of words with any forbidden string.
-
-    For a long secret, a shared run of `ngram` (4) consecutive words is a
-    coincidence-proof signal of copying. A *short* secret (fewer than `ngram`
-    words — e.g. a 3-word `success` like "burn the chantry") could never reach a
-    4-word run, so it would slip past; for those we require its *whole* phrase to
-    appear verbatim (effective n = its length), with a floor of 2 so a one-word
-    secret like the `pursue` verb "control" can't trip on every headline."""
-    htok = _tokens(text)
-    if not htok:
-        return False
-    hgrams_by_n = {}  # cache the headline's n-gram set per window size
-    for f in forbidden:
-        ftok = _tokens(f)
-        n = min(ngram, len(ftok))
-        if n < 2 or len(htok) < n:
-            continue  # 1-token secrets are too generic; headline too short to hold n
-        if n not in hgrams_by_n:
-            hgrams_by_n[n] = {tuple(htok[i:i + n]) for i in range(len(htok) - n + 1)}
-        hgrams = hgrams_by_n[n]
-        for i in range(len(ftok) - n + 1):
-            if tuple(ftok[i:i + n]) in hgrams:
-                return True
-    return False
-
-
-def safe_headline(headline, forbidden, max_len=HEADLINE_MAX, ngram=4):
-    """Is this headline safe to write into actor-safe memory? Reject it if it is
-    over-long for an abstract line, or echoes secret goal/success text."""
-    h = " ".join(str(headline or "").split())
-    if len(h) > max_len:
-        return False
-    return not _shares_ngram(h, forbidden, ngram)
+    return _fw_append_observation(root, learner, day, line)
 
 
 def propagate(root, events, max_hops=2, agents=None):

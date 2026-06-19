@@ -43,7 +43,7 @@ For each `## Reflection` agent (and any whose ledger swung hard):
 
 ## What to write back
 - **`Cast/<name>/drives.md`** — Reflection-notes beliefs, and any `clock`/`state`/`goal`/`relationships` re-plan. Leave the front-matter shape intact.
-- **`Cast/<name>/memory.md`** — a day-stamped entry (`[Day N — in-world date]`) from the character's *own* POV (actor-visible later — write only what they'd know; keep the private read in `secrets.md`).
+- **`Cast/<name>/memory.md`** — a day-stamped entry (`[Day N — in-world date]`) from the character's *own* POV (actor-visible later — write only what they'd know; keep the private read in `secrets.md`). **For cross-character observations under "What I've learned about others":** validate first with `python Tools/firewall.py --check "<line>"` (exit 0 = safe to write), or call `firewall.append_observation(root, learner, day, line)` — the sanctioned write path that validates and writes atomically. Never write a raw observation line that could echo a hidden goal, belief, or secret.
 - **`Game/world-state.md`** — for a faction/world entry, the same in-place update.
 - **`Game/plots.md`** — promote a hardened collision; advance the `State:` / `Player involvement:` of any plot your move pushed.
 - **`Game/developments.md`** — the most important output. Append a day-stamped entry per development with what happened and a **`Surface:`** line (`now` / `soon` (trigger) / `hidden`). Mark anything you're deferring with `Escalate: claude`.
