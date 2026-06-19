@@ -155,6 +155,15 @@ def gather_secrets(root, agents=None):
     Returns {agent_name: [secret_str, ...]}.
     More comprehensive than _forbidden_texts() alone; used by both the
     per-post --scan and the scrub path.
+
+    Scope boundary: this covers the *per-Cast-agent* corpus — each living
+    agent's drives.md (front-matter + prose body) and their secrets.md. It does
+    NOT include campaign-level secret files (`Game/gm-secrets.md`,
+    `Game/developments.md` hidden entries, `Game/plots.md` prose). The leak
+    vector this guards is director-written observations *about agents*, which is
+    where the fingerprint lands. A campaign-level secret not encoded in any
+    agent's drives won't be caught here — keep upstream discipline (a fixed,
+    goal-free headline) as the primary defense.
     """
     if _wt is None:
         return {}
@@ -232,7 +241,11 @@ def append_observation(root, learner, day, text):
         content = content[:nl + 1] + text + "\n" + content[nl + 1:]
     else:
         content = content.rstrip() + f"\n\n{_OBS_HEADING}\n{text}\n"
-    p.write_text(content, encoding="utf-8")
+    # Atomic write: stage to a temp file in the same dir, then replace, so a
+    # crash mid-write can never truncate the learner's memory.md.
+    tmp = p.with_suffix(p.suffix + ".tmp")
+    tmp.write_text(content, encoding="utf-8")
+    tmp.replace(p)
     return True
 
 
