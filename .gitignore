@@ -10,6 +10,10 @@ __pycache__/
 # Living-world tick: ephemeral hand-off from the metronome to the world-director
 Game/.world-tick-queue.md
 
+# Living-world collision cooldown: tool-owned debounce state (which collisions
+# fired on which tick). Operational, not story; rebuilds itself as you tick.
+Game/.world-cooldowns.json
+
 # Living-world drift audit: ephemeral GM-only report, rebuildable any time with
 # `python Tools/world_health.py`. Never commit it — it can carry spoilers.
 Game/.world-health.md

@@ -33,7 +33,11 @@ For each `## Interactions` entry, decide what actually happens *between* the par
 - **Control ledger is fixed.** If a collision carries a `Control ledger:` line, that number was set deterministically — **narrate what it *means*, never change it.**
 - **Stay inside each agent's nature and rules.** Act from their `goal`, their wound and need in `secrets.md`, and the powers their sheet actually grants. A move a character couldn't make isn't drama, it's a continuity break. (This is the very failure the local model used to commit — don't repeat it.)
 - **Promote a hardened clash to a plot.** When a collision becomes an ongoing fight rather than a one-tick exchange, add it to `Game/plots.md` (`State: forming`/`rising`, usually `Player involvement: unaware`) — it can run its course off-screen and surface later as rumor or a "meanwhile" chapter.
-- **Off-screen, not on-stage.** You move the world *around* the Player; never seize the Player's character or pre-empt their next choice.
+- **Off-screen, not on-stage — never pre-narrate the Player's scenes.** You move the world *around* the Player; never seize the Player's character or pre-empt their next choice. Specifically:
+  - **Stage conditions and off-screen consequences; never resolve or pre-narrate a scene the Player will play.**
+  - **Never write a player-facing event in the past or future tense as if it occurred** unless it actually has (it's in `timeline.md` / was played). `Surface: now` is live pressure for the GM to dramatize, not a pre-played result.
+  - **Never put words, actions, thoughts, or feelings in the Player character's mouth** — you author everyone *except* the PC.
+  - **When in doubt, write the agent's intent/positioning, not a concrete event.** (`Tools/world_health.py`'s director-discipline lint flags these; warnings only, the GM adjudicates.)
 - **Weight to the play mode** in `## Play mode` of `Game/system.md` — Dramatist (default) picks the most charged honest move; a Simulationist lean sculpts less and lets tracked state speak; an Evaluationist lean lets stakes bite. You never fake mechanics in any mode.
 
 ## Reflect and re-plan
