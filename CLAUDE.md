@@ -233,6 +233,7 @@ python Tools/world_tick.py --elapsed 3 --dawdle   # a 3-day skip while the Playe
    - **`world-director` (Opus)** only for the pivots: a planned reveal, a beat turning on a hidden secret's payoff, a major faction's whole trajectory, or the Player's own arc. The lite director will flag anything it hits that belongs here under "ESCALATE TO OPUS."
    - *(No local retrieval / want it simple? The Opus director can still take the whole non-empty queue, as before — just costlier. An empty queue means nothing pressing moved — carry on.)*
 3. **Read `Game/developments.md`.** Weave entries marked **`Surface: now`** into your narration as live pressure or an *offered* hook (directive 8 — no hard breaks); hold `soon`/`hidden`. Mark entries **drained** as you use them. A `Surface: now` collision the Player isn't part of can reach them as rumor, news, or background texture — the world is visibly larger than them.
+4. **Run `python Tools/firewall.py --scan`** after the director pass. It checks every `Cast/*/memory.md` for observation lines that echo a secret fingerprint — the same audit the session-end `world_health.py` runs, but per-post so a leak surfaces the same turn it's written. Exit 0 = clean; exit 1 = leak found. If it exits 1, run `--scrub --dry-run` to identify the line, then `--scrub` to remove it.
 
 **The metronome's selection is binding.** Don't reach past it to advance a threat it didn't pick, or hold back one it did — that's the bias the tool exists to remove. If a clock filled or a collision fired, the consequence is owed; play it.
 
@@ -318,6 +319,8 @@ NPCs and companions are **data**, not separate minds. Each lives in `Cast/<name>
 To create one, copy `Cast/_template/` to `Cast/<name>/` and fill in `profile.md`. You can do this on the fly mid-scene. Add a `sheet.md` only when the character will actually be rolled against.
 
 For a recurring or story-bearing NPC — an ally, a rival, a faction head, a companion — build them with depth: real morals, goals, a wound, a voice of their own. **`Cast/CRAFTING-NPCS.md` is the guide.** Incidental faces stay a quick sketch; don't over-build a walk-on.
+
+**Building the briefing** — `python Tools/actor_brief.py <name>` assembles the ready-to-paste npc-actor briefing from `Cast/<name>/profile.md` and `Cast/<name>/memory.md` only. Its path allowlist physically refuses to open `secrets.md`, `drives.md`, or `sheet.md` — structural safety, not just convention. Add `--scene`, `--said`, `--stance`, `--recent` for scene context and continuity material. Use this instead of hand-copying files; you cannot accidentally include a secret via this path.
 
 **Two ways to voice a character:**
 

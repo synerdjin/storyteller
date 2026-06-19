@@ -11,6 +11,35 @@ Version numbers are `MAJOR.MINOR.PATCH`:
 
 ---
 
+## 2.11.0 — 2026-06-19
+
+### Added — firewall-safe actor pipeline (`Tools/firewall.py` + `Tools/actor_brief.py`)
+
+Two persistent manual-process risks: (a) a director writing an observation line that accidentally echoes a hidden goal or secret into `Cast/*/memory.md`, where it could surface to the `npc-actor`; (b) the GM hand-assembling an npc-actor briefing and forgetting to exclude one of the GM-only files. This release closes both with structural tools — not convention, not trust.
+
+**Part A — `Tools/firewall.py`: the sanctioned write path and per-post scan**
+
+- **Promoted fingerprint functions.** `_tokens`, `_shares_ngram`, `safe_headline`, and `_forbidden_texts` — previously defined inline in `social.py` — are moved into `firewall.py` as the single source of truth. `social.py` now imports them from there. Behavior is byte-identical; `social --self-test` still passes.
+- **`append_observation(root, learner, day, text)` — the only sanctioned write path** into "What I've learned about others." Validates `text` against the full secret corpus (front-matter + drives prose body + `secrets.md`) before writing. Social.py's `append_observation` now routes through this. Directors must validate with `--check "<line>"` before any raw write, or call this programmatically.
+- **`gather_secrets(root)` — comprehensive scope.** Extends the propagation guard (front-matter only) to include the prose body of `drives.md` (reflection beliefs) and `secrets.md` text — so the per-post scan catches reflection-appended beliefs that the propagation guard never saw.
+- **`--scan` (per-post, not just session-end).** Checks every `Cast/*/memory.md` for observation lines that echo a secret fingerprint. Folds into the per-post loop (after the director pass) so a leak surfaces the same turn it's written. Exit 1 = leak found.
+- **`--check "<text>"` — director validation gate.** `python Tools/firewall.py --check "<line>"` lets a director verify a single line before writing. Exit 0 = safe; exit 1 = rejected.
+- **`--scrub [--dry-run]` — targeted repair.** Removes only auto-generated observation lines (matching the `- *[Day N]* — about \`X\`:` pattern) that fail the fingerprint. Never touches authored log entries. Always run `--dry-run` first.
+- **`--self-test` (5 assertions):** verbatim secret rejected; abstract observation passes; common-words false-positive not triggered; scrub dry-run lists offenders without writing / live scrub removes only them; Unicode NPC name can't dodge the match.
+
+**Part B — `Tools/actor_brief.py`: the allowlist-enforced briefing assembler**
+
+- **Path allowlist (`_ALLOWED_FILENAMES = {"profile.md", "memory.md"}`)** enforced by `_read_safe()`. Any read attempt on a file outside this set — `secrets.md`, `drives.md`, `sheet.md`, `gm-secrets.md`, or any other character's files — raises `PermissionError` before a single byte is read. Structural safety, not convention.
+- **CLI:** `actor_brief.py <name> [--scene] [--recent] [--stance] [--said] [--day N]`. Outputs the complete npc-actor briefing to stdout for pasting. `--no-retrieve` skips the optional `memory_search --scope public` retrieval pass.
+- **`--self-test` (5 assertions):** briefing contains profile + memory content + day; secrets.md/drives.md content never appears; missing profile fails loudly; path allowlist rejects `secrets.md`/`drives.md` explicitly; safe files are allowed.
+
+**Directors mandate updated.** Both `world-director.md` and `world-director-lite.md` now require all "What I've learned about others" writes to be validated via `--check` or routed through `firewall.append_observation`. `CLAUDE.md` adds `python Tools/firewall.py --scan` as step 4 of the per-post loop and references `actor_brief.py` in the NPC voicing section.
+
+### Campaign migration (none required)
+Additive. No save-data changes. `Tools/firewall.py` and `Tools/actor_brief.py` are new engine files added to the UPDATING.md manifest and the `git checkout` step.
+
+---
+
 ## 2.10.0 — 2026-06-19
 
 ### Added — deterministic resource tracking (`Tools/resources.py`)
