@@ -86,6 +86,22 @@ python Tools/dice.py v20 5 -w       # spend Willpower: +1 automatic success, can
 python Tools/dice.py 2d10           # generic utility roll, when a scene just needs a die
 ```
 
+**Spending and recovering resources** — call `resources.py` instead of hand-editing `Character/sheet.md`. Claude decides *when* to spend or recover; the tool does the arithmetic and keeps the auditable log:
+
+```
+python Tools/resources.py --show                        # current pools + wound penalty
+python Tools/resources.py --spend wp 1  --reason "..."  # spend Willpower (before dice.py -w)
+python Tools/resources.py --gain  wp 1  --reason "Nature fulfilled"
+python Tools/resources.py --rest                        # WP rest recovery (+1 default)
+python Tools/resources.py --node 2      --reason "Stadtbad Node"   # Quint refill
+python Tools/resources.py --damage lethal 2             # mark Health
+python Tools/resources.py --damage bashing 3 --soak 1  # soak already rolled via dice.py
+python Tools/resources.py --heal 1
+python Tools/resources.py --paradox +1  --reason "vulgar magick, witnessed"
+```
+
+Every change is logged to `Character/resource-log.md` (day-stamped, GM-only). The Player can always ask "what are my current pools?" — run `--show` and read them out.
+
 Use the subcommand for the **live game** in `Game/system.md` (`m20` / `v20` / `w20`); in crossover, use whichever splat is acting.
 
 **Core resolution — the Storyteller d10 pool** (these are the engine defaults; a `Sourcebooks/_digests/` file for the live game **overrides** them):
@@ -329,6 +345,7 @@ State lives in files, not only in your memory. Keep them current:
 - **`Game/developments.md`** — *(GM-only)* the world's pending off-screen moves, staged by the loop with `Surface:` timing. Drain `now` items into play; mark them **drained**.
 - **`Game/world.md`** — locations, factions, lore as established or invented. **`Game/world-state.md`** *(GM-only)* — the living factions/world-clocks the metronome advances.
 - **`Cast/<name>/memory.md`** — per-character relationship and shared history, each entry day-stamped — including the "What I've learned about others" observations the loop appends.
+- **`Character/sheet.md`** — the volatile pools (WP, Quint, Paradox, Health) are updated by `python Tools/resources.py`, not by hand. Every change is logged to `Character/resource-log.md` (GM-only, auditable). Never edit pool numbers in the sheet directly; the tool is the only writer.
 - **`Game/gm-secrets.md`** — your private plans and planned reveals. Read it, act on it, never quote it.
 - **`PLAYER-NOTES.md`** (repo root) — the **Player's spoiler-free dashboard**: a character's-eye view of what they know, what they're chasing, who's in their corner, and what's pending. This is the *one* continuity file written **for the Player to read**, so two rules govern it. **First: never put a GM secret in it** — nothing from `gm-secrets.md` or any `secrets.md`, no planned reveal, no twist the character hasn't earned in play; when in doubt, leave it out. **Second: it's a curated mirror, not a dump** — unlike `threads.md` and `current-scene.md` (your GM-facing working files, full of reminders and stakes), this is written *to the Player in the campaign's narrative voice*, carrying only what their character actually knows. Keep it current at the end of each scene/session and stamp the day. The Player owns it and may ask to add or park notes there; it reserves a "Your own notes" section for them.
 
