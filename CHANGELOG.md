@@ -11,6 +11,24 @@ Version numbers are `MAJOR.MINOR.PATCH`:
 
 ---
 
+## 2.10.0 — 2026-06-19
+
+### Added — deterministic resource tracking (`Tools/resources.py`)
+
+In play, the GM was hand-editing `Character/sheet.md` ~8 times per session to track Willpower, Quintessence, Paradox, and Health, and ruling refill amounts on the fly because the engine's floor didn't specify them. That's the one place "be seen to be fair" wasn't tool-backed the same way `dice.py` and `ledger.py` are. This release closes the gap.
+
+- **New tool (`Tools/resources.py`).** Reads and writes the volatile pool block in `Character/sheet.md`, applies rule-based spends/gains/recovery, and logs every change to `Character/resource-log.md` — day-stamped and reason-tagged, auditable on demand. The GM calls it instead of hand-editing; the rules become consistent instead of improvised. Pure stdlib, no model, no randomness — same bar as `dice.py`.
+- **Operations:** `--show` (current pools + wound penalty), `--spend POOL N`, `--gain POOL N`, `--rest [--full]` (WP recovery), `--node N` (Quint refill from a Node), `--damage TYPE N [--soak N]`, `--heal N`, `--paradox +N/-N`. `--dry-run` previews without writing. `--sheet PATH` targets an NPC's sheet for statted opposition.
+- **Pools covered:** Willpower (rating + current + pip string), Quintessence, Paradox, Health (7 levels; bashing/lethal/aggravated marks; derived wound penalty). Splat analogues (Blood/Vitae, Rage, Gnosis) parsed and supported when present on the sheet.
+- **Recovery rules get a home:** WP rest (+1/call, default; configurable), Node refill (capped at Node rating and permanent max), soak step (the tool never rolls — `dice.py` does; the GM passes the result as `--soak N`), Health healing (GM-paced via `--heal`). Override any default via `Game/resource-rules.json`.
+- **Firewall.** `Character/resource-log.md` is classified `secret` in `memory_index.py` — never indexed for `--scope public`, never handed to an `npc-actor`. Regression assertion in `--self-test`.
+- **Built-in `--self-test`** (no model, no network): round-trip safety, clamp guards, rest rule, Node rule, Health marking/soak/healing, digest override, day inference, firewall classification.
+
+### Campaign migration (none required)
+Additive; no save-data changes. `Character/resource-log.md` is authored history (like `Game/timeline.md`) — commit it alongside the sheet. A `Game/resource-rules.json` scaffold is optional; defaults are documented in the tool header.
+
+---
+
 ## 2.9.0 — 2026-06-17
 
 ### Added — the living-world dashboard (author god-view console)

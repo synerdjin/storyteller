@@ -74,6 +74,8 @@ def classify(rel):
     if parts[0] == "Character":
         if fn == "backstory.md":
             return ("public", "PC", "backstory")
+        if fn == "resource-log.md":
+            return ("secret", "PC", "resource-log")
         return (None, None, None)  # sheet.md is mechanical — skip
 
     if parts[0] == "Cast" and len(parts) >= 3 and not parts[1].startswith("_"):
