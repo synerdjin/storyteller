@@ -36,7 +36,7 @@ except Exception:
 # ── Security: path allowlist ──────────────────────────────────────────────────
 #
 # These are the ONLY filenames this tool may open for any Cast/<name>/ folder.
-# Anything else — secrets.md, drives.md, sheet.md, gm-secrets.md, another
+# Anything else — secrets.md, sheet.md, gm-secrets.md, another
 # character's files — is refused by _read_safe() before a single byte is read.
 _ALLOWED_FILENAMES = {"profile.md", "memory.md"}
 
@@ -119,14 +119,14 @@ def _read_safe(path, allowed_names=_ALLOWED_FILENAMES):
     """Read file at `path` only if its basename is in `allowed_names`.
 
     Raises PermissionError on any violation — this is the structural guarantee
-    that secrets.md, drives.md, and sheet.md can never appear in a briefing.
+    that secrets.md and sheet.md can never appear in a briefing.
     """
     p = Path(path)
     if p.name not in allowed_names:
         raise PermissionError(
             f"actor_brief path-allowlist violation: '{p.name}' is not in "
             f"{sorted(allowed_names)}. "
-            f"Refusing to read '{p}'. Never pass secrets.md, drives.md, "
+            f"Refusing to read '{p}'. Never pass secrets.md, "
             f"sheet.md, or gm-secrets.md to the npc-actor."
         )
     return p.read_text(encoding="utf-8")
@@ -258,20 +258,13 @@ def _self_test():
         )
         secret_text = (
             "# Diana -- secrets (GM ONLY)\n\n"
-            "She is secretly the sire of half the coterie.\n"
-            "Her real goal is to hollow out the coterie from within.\n"
-        )
-        drives_text = (
-            "---\nliving: true\n"
-            "goal: { pursue: control, target: coterie, "
-            "success: hollow out the coterie without revealing involvement }\n"
-            "---\n\n## Agenda\nShe will manipulate the player into the role of pawn.\n"
+            "She is secretly the Nephandi agent who cursed the node.\n"
+            "Her real goal is to unmake the Tradition chantry from within.\n"
         )
 
         (cast_dir / "profile.md").write_text(profile_text, encoding="utf-8")
         (cast_dir / "memory.md").write_text(memory_text, encoding="utf-8")
         (cast_dir / "secrets.md").write_text(secret_text, encoding="utf-8")
-        (cast_dir / "drives.md").write_text(drives_text, encoding="utf-8")
 
         # ── 1. Briefing contains profile + memory content + correct day ────────
         brief = assemble("diana", root, scene="foggy docks", day=7, retrieve=False)
@@ -280,10 +273,9 @@ def _self_test():
         assert "Day 7" in brief, "day stamp must appear in brief"
         assert "diana" in brief.lower(), "NPC name must appear in brief"
 
-        # ── 2. secrets.md / drives.md content must NEVER appear in the briefing -
-        assert "secretly the sire" not in brief, "secrets.md leaked into brief"
-        assert "hollow out the coterie without" not in brief, "drives.md goal leaked"
-        assert "She will manipulate the player" not in brief, "drives.md agenda leaked"
+        # ── 2. secrets.md content must NEVER appear in the briefing ─────────────
+        assert "Nephandi agent" not in brief, "secrets.md leaked into brief"
+        assert "unmake the Tradition chantry" not in brief, "secrets.md content leaked"
 
         # ── 3. Missing profile fails loudly (FileNotFoundError) ───────────────
         (root / "Cast" / "ghost").mkdir(parents=True)
@@ -293,8 +285,8 @@ def _self_test():
         except FileNotFoundError:
             pass
 
-        # ── 4. Path allowlist rejects secrets.md and drives.md explicitly ──────
-        for forbidden in ("secrets.md", "drives.md", "sheet.md", "gm-secrets.md"):
+        # ── 4. Path allowlist rejects forbidden files explicitly ─────────────────
+        for forbidden in ("secrets.md", "sheet.md", "gm-secrets.md"):
             try:
                 _read_safe(cast_dir / forbidden)
                 assert False, f"Should raise PermissionError for {forbidden}"
