@@ -62,9 +62,6 @@ POOL_ALIASES = {
     "wp": "wp", "willpower": "wp",
     "quint": "quint", "quintessence": "quint",
     "paradox": "paradox",
-    "blood": "blood", "vitae": "blood",
-    "rage": "rage",
-    "gnosis": "gnosis",
 }
 
 # Recovery defaults — override via Game/resource-rules.json
@@ -136,18 +133,11 @@ class Sheet:
         self.paradox = None
         self.paradox_max = 20
 
-        self._blood_line = None;  self.blood = None;  self.blood_max = None
-        self._rage_line = None;   self.rage = None;   self.rage_max = None
-        self._gnosis_line = None; self.gnosis = None; self.gnosis_max = None
-
         self._health = {lvl: (None, MARK_EMPTY) for lvl in HEALTH_LEVELS}
 
         for i, line in enumerate(self._lines):
             self._try_wp(i, line)
             self._try_quint_paradox(i, line)
-            self._try_splat(i, line, "Blood", "_blood_line", "blood", "blood_max")
-            self._try_splat(i, line, "Rage",  "_rage_line",  "rage",  "rage_max")
-            self._try_splat(i, line, "Gnosis","_gnosis_line","gnosis","gnosis_max")
             self._try_health(i, line)
 
     def _try_wp(self, i, line):
@@ -174,16 +164,6 @@ class Sheet:
             if m:
                 self._paradox_line = i
                 self.paradox = int(m.group(1))
-
-    def _try_splat(self, i, line, label, line_attr, cur_attr, max_attr):
-        m = re.search(
-            rf"\*\*{label}(?:\s+Pool)?:\*\*\s*(\d+)(?:\s*/\s*(\d+))?",
-            line, re.IGNORECASE,
-        )
-        if m:
-            setattr(self, line_attr, i)
-            setattr(self, cur_attr, int(m.group(1)))
-            setattr(self, max_attr, int(m.group(2)) if m.group(2) else None)
 
     def _try_health(self, i, line):
         for lvl in HEALTH_LEVELS:
@@ -286,37 +266,6 @@ class Sheet:
         self.paradox = new_val
         return old, new_val
 
-    def set_splat_pool(self, pool, new_val):
-        attrs = {
-            "blood":  ("_blood_line",  "blood",  "blood_max"),
-            "rage":   ("_rage_line",   "rage",   "rage_max"),
-            "gnosis": ("_gnosis_line", "gnosis", "gnosis_max"),
-        }
-        if pool not in attrs:
-            raise ValueError(f"Unknown splat pool: {pool!r}")
-        la, ca, ma = attrs[pool]
-        li = getattr(self, la)
-        if li is None:
-            raise ValueError(f"{pool.title()} not found on sheet.")
-        mx = getattr(self, ma)
-        new_val = max(0, new_val)
-        if mx is not None:
-            new_val = min(new_val, mx)
-        old = getattr(self, ca)
-        if new_val == old:
-            return old, new_val
-        label = pool.title()
-        ok = self._sub_line(
-            li,
-            rf"(\*\*{label}(?:\s+Pool)?:\*\*\s*)(\d+)",
-            lambda m: m.group(1) + str(new_val),
-            flags=re.IGNORECASE,
-        )
-        if not ok:
-            raise ValueError(f"Could not update {label} on line {li+1}.")
-        setattr(self, ca, new_val)
-        return old, new_val
-
     def mark_health(self, damage_type, count):
         """Mark `count` empty Health levels with damage_type. Returns list of levels marked."""
         mark = DAMAGE_MARKS.get(damage_type)
@@ -411,16 +360,6 @@ def _pool_get_set(sheet, pool):
         if sheet.paradox is None:
             raise ValueError("Paradox not found on sheet.")
         return lambda: sheet.paradox, sheet.set_paradox, sheet.paradox_max
-    if pool in ("blood", "rage", "gnosis"):
-        val = getattr(sheet, pool)
-        if val is None:
-            raise ValueError(f"{pool.title()} not found on sheet.")
-        mx = getattr(sheet, f"{pool}_max")
-        return (
-            lambda p=pool: getattr(sheet, p),
-            lambda v, p=pool: sheet.set_splat_pool(p, v),
-            mx,
-        )
     raise ValueError(f"Unknown pool {pool!r}.")
 
 
@@ -440,12 +379,6 @@ def render_show(sheet):
         lines.append(f"Quintessence: {sheet.quint} / {sheet.quint_max}")
     if sheet.paradox is not None:
         lines.append(f"Paradox:      {sheet.paradox} / {sheet.paradox_max}")
-    for pool in ("blood", "rage", "gnosis"):
-        val = getattr(sheet, pool)
-        if val is not None:
-            mx = getattr(sheet, f"{pool}_max")
-            mx_str = f" / {mx}" if mx is not None else ""
-            lines.append(f"{pool.title():<14}{val}{mx_str}")
     lines.append("\nHealth:")
     lines.append(_ascii(sheet.health_summary()))
     wp = sheet.wound_penalty()

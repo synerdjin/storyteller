@@ -5,9 +5,9 @@
 > When this digest is live, note it in `Game/system.md`. Its rules **override** the matching CLAUDE.md defaults — say exactly which in **Overrides** below.
 
 ## System & source
-- **Game & line:** *(e.g. Vampire: The Masquerade 20th Anniversary)*
+- **Game & line:** Mage: The Ascension 20th Anniversary (M20)
 - **Source:** *(book + chapters/pages this digest was drawn from)*
-- **Dice subcommand:** *(`m20` / `v20` / `w20` — what to pass to `Tools/dice.py`)*
+- **Dice subcommand:** `m20` (what to pass to `Tools/dice.py`)
 
 ## Core resolution
 - **Pool:** how a dice pool is built (Attribute + Ability + …).
@@ -16,12 +16,12 @@
 - **Extended / resisted / contested rolls:** the variants you'll actually use.
 
 ## Character rules
-- **Sheet shape:** Attributes, Abilities, Backgrounds, and the splat traits (Spheres / Disciplines / Gifts, plus Arete / Humanity / Renown, Rage / Gnosis / Blood, etc.).
+- **Sheet shape:** Attributes, Abilities, Backgrounds, and the Mage traits (the nine Spheres, Arete, Quintessence/Paradox, Avatar, Resonance, plus paradigm/practice/instruments).
 - **Creation:** priorities and point/freebie spreads, starting dots, starting pools.
 - **Advancement:** the **exact XP/experience costs** per trait — these override the engine's default spend rules.
 
 ## Key tables
-- The handful you'll reach for in play: **damage & soak**, **Health levels / wound penalties**, the signature **supernatural powers** (a few Disciplines / Spheres / Gifts), and any roll-reference charts.
+- The handful you'll reach for in play: **damage & soak**, **Health levels / wound penalties**, the signature **Sphere effects** (and vulgar/coincidental + Paradox rules), and any roll-reference charts.
 
 ## Overrides
 - Exactly which CLAUDE.md defaults this digest **replaces** — resolution, Health/condition track, oracle, advancement/XP — so there's no ambiguity about which rule is live.

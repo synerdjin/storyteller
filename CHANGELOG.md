@@ -11,6 +11,30 @@ Version numbers are `MAJOR.MINOR.PATCH`:
 
 ---
 
+## 4.0.0 — 2026-06-27
+
+### Storyteller is now a dedicated Mage: The Ascension (M20) engine
+
+The engine no longer runs three games. **Vampire (V20)**, **Werewolf (W20)**, and **crossover** play have been removed; everything is focused on **Mage: The Ascension 20th Anniversary (M20)** — the nine Spheres, Arete, Quintessence/Paradox, the Avatar, paradigm/focus, and the Ascension War. The Storyteller System resolution, the secrecy firewall, the connected-cast model, the campaign clock, and the fan-fiction layer are all unchanged.
+
+**Tone.** "Which game" is no longer a Session Zero question, so that beat becomes a **tone dial**: the M20 core rulebook's suggested tone is the default and is kept unless the Player chooses to adjust it. The chosen register is recorded in `Game/boundaries.md` (and noted on the "Tone" line of `Game/system.md`).
+
+**Removed / changed.**
+- `Tools/dice.py` — dropped the `v20`/`w20` (and `vampire`/`werewolf`) subcommands and the `-r/--rage` flag; `m20`/`mage` remain. Unknown subcommands fall through to the generic `NdS` roller.
+- `Tools/resources.py` — dropped the Blood/Vitae, Rage, and Gnosis pools; Willpower, Quintessence, Paradox, Health, and Node refill remain.
+- `Tools/cultural_profile.py` — dropped the `camarilla`/`sabbat`/`anarch`/`garou-tribal` presets; kept `technocratic`/`tradition-mage`; added M20 outlooks `nephandi`, `hollow-one`, `disparate`.
+- `Game/system.md` — collapsed to M20 (no game picker, no crossover section); the "Core theme" line is now the tone dial.
+- `campaign-architect` / `character-creator` — build only the M20 setting and sheet (Spheres/Arete/Avatar/paradigm), no splat branching.
+- Docs/templates (`README.md`, `CLAUDE.md`, `Character/README.md`, `Cast/_template/`, `Cast/CRAFTING-NPCS.md`, `Story/index.md`, `Sourcebooks/README.md`, `Sourcebooks/_digests/_TEMPLATE.md`) — rewritten for M20 only.
+
+**Added — M20 sourcebook digests** under `Sourcebooks/_digests/` (built from the Player's own books): the core rules (`M20-core.md`), Sphere effects (`M20-how-do-you-do-that.md`), expanded options (`M20-book-of-secrets.md`), antagonists (`M20-gods-and-monsters.md`), and extra orders (`M20-forbidden-and-forgotten-orders.md`). Live digests are listed in `Game/system.md`.
+
+### Campaign migration
+
+This engine is M20-only; a V20 or W20 campaign cannot be carried forward on it. For an existing **Mage** campaign nothing in your save data changes — characters, world, cast, threads, and timeline are untouched. After updating, the GM stops offering the other games, reads the new M20 digests if present, and re-indexes memory (`python Tools/memory_index.py --rebuild`). If a sheet still carries Blood/Rage/Gnosis lines (e.g. a converted character), remove them — `resources.py` no longer tracks them.
+
+---
+
 ## 3.0.0 — 2026-06-27
 
 ### The living world is removed — Storyteller is a focused AI game master again

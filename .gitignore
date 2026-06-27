@@ -10,3 +10,9 @@ __pycache__/
 # Local semantic-memory index: a rebuildable artifact (markdown is the source of
 # truth). Regenerate any time with `python Tools/memory_index.py`.
 Game/.memory-index/
+
+# Player-supplied rulebook PDFs: copyrighted, large, and not the engine's source
+# of truth — the GM reads the markdown digests in Sourcebooks/_digests/ instead.
+# Bring your own books locally; they stay out of the repo.
+Sourcebooks/*.pdf
+Sourcebooks/**/*.pdf
