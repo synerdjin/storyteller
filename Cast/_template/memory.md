@@ -13,5 +13,5 @@
 - *[Day N — in-world date]* — what happened between them and the party.
 
 ## What I've learned about others
-> The observation step of a living character: what *this* character has come to know about the **other** people and powers in the world — moves they've witnessed, rumors they believe, where they think they stand with each. The world tick and director append here when an off-screen event would plausibly reach this character's ears. Keep it to what they could actually know (this file is actor-visible) — the GM's private read on the same events stays in `secrets.md`.
+> What *this* character has come to know about the **other** people and powers in the world — moves they've witnessed, rumors they believe, where they think they stand with each. Add an entry when an off-screen event would plausibly reach this character's ears. Keep it to what they could actually know (this file is actor-visible) — the GM's private read on the same events stays in `secrets.md`.
 - *[Day N]* — about `<entity>`: what they observed or heard, and what they now believe because of it.
