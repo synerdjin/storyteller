@@ -8,16 +8,16 @@ cross-cultural frameworks so a worldview is *calibratable*, not invented:
   * Hofstede dimensions (0..100 each)
   * World Values Survey primary axes (-1..1 each)
 
-Why it's here: the living world's plots are only as coherent as the NPCs'
-*motivations*. A Camarilla elder, a Sabbat templar, and a Glass Walker should
-reason from genuinely different values — not just different voices. This is a
-pure function of the numbers (no model call, no dependencies), so the
-campaign-architect can seed a cast whose worldviews actually differ, and you can
-calibrate them rather than hand-wave "he's the traditional one."
+Why it's here: a cast is only as coherent as the NPCs' *motivations*. A Camarilla
+elder, a Sabbat templar, and a Glass Walker should reason from genuinely different
+values — not just different voices. This is a pure function of the numbers (no
+model call, no dependencies), so the campaign-architect can seed a cast whose
+worldviews actually differ, and you can calibrate them rather than hand-wave "he's
+the traditional one."
 
 It produces *worldview text*, which the architect folds into an NPC's
-`profile.md` (actor-safe — values are openly expressed). It does not run at tick
-time; it's a Session-Zero / NPC-build aid.
+`profile.md` (actor-safe — values are openly expressed). It's a
+Session-Zero / NPC-build aid.
 
 Usage:
     python Tools/cultural_profile.py --list             # the named presets

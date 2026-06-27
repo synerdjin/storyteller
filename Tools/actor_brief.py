@@ -1,11 +1,9 @@
 #!/usr/bin/env python3
-"""Firewall-safe npc-actor briefing assembler.
-
-Engine v2.11.0 — Part B of the firewall-safe actor pipeline.
+"""Safe npc-actor briefing assembler.
 
 Assembles a ready-to-use npc-actor briefing from a character's actor-safe
 files only — the path allowlist makes it structurally impossible to leak
-secrets.md, drives.md, or sheet.md into the briefing, no matter what the GM
+secrets.md or sheet.md into the briefing, no matter what the GM
 accidentally types.
 
 Paste the output to the npc-actor agent (or pipe it in). The footer reminds
@@ -325,7 +323,7 @@ def _self_test():
 def main(argv):
     ap = argparse.ArgumentParser(
         prog="actor_brief.py",
-        description="Assemble a firewall-safe npc-actor briefing from actor-safe files only.",
+        description="Assemble a safe npc-actor briefing from actor-safe files only.",
     )
     ap.add_argument("name", nargs="?", help="NPC name matching Cast/<name>/")
     ap.add_argument("--scene", type=str,

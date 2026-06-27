@@ -90,7 +90,7 @@ def load_config(root):
 
 
 def current_day(root):
-    """Read Day N from Game/current-scene.md (same helper as world_scribe.py)."""
+    """Read Day N from Game/current-scene.md."""
     p = Path(root) / "Game" / "current-scene.md"
     if p.exists():
         m = re.search(r"Day\s+(\d+)", p.read_text(encoding="utf-8"))

@@ -6,14 +6,6 @@ additive** — the engine runs without it (retrieval falls back to a model-free
 lexical search, or you just read the markdown). The point is to spend Claude tokens
 on live play and player-facing prose, not on re-feeding accumulated state.
 
-> **What changed:** the local *generative* tier (an LLM that scribed off-screen
-> moves and resolved collisions) has been **retired** — a small model inventing
-> World-of-Darkness facts drifted badly. Now the only local model is the
-> **embedder**, for retrieval. Routine world-moves are **templated
-> deterministically** by `world_scribe.py` (no model), and the collisions/reveals
-> that need judgment go to Claude (`world-director-lite` on Sonnet,
-> `world-director` on Opus). See "The living world" in `CLAUDE.md`.
-
 > **Why local embeddings, not Claude's?** Anthropic has no embeddings endpoint, and
 > a local embedder keeps GM secrets on your machine.
 
@@ -25,9 +17,7 @@ on live play and player-facing prose, not on re-feeding accumulated state.
 | `Tools/local_client.py` | Tiny stdlib client for a local Ollama server. |
 | `Tools/memory_index.py` | Builds the semantic index over campaign markdown. |
 | `Tools/memory_search.py` | **Hybrid** retrieval (dense + BM25 + RRF), firewall-scoped, with citations. |
-| `Tools/world_scribe.py` | **Deterministic** templater for routine world-moves (no model). |
 | `Game/local-models.json` | Per-campaign model config (edit me). |
-| `Game/cost-ledger.md` | Visible record of what ran deterministically vs on Claude. |
 
 ## One-time setup (on your machine)
 
@@ -43,9 +33,9 @@ on live play and player-facing prose, not on re-feeding accumulated state.
    `Game/local-models.json` (the index records the embedder and **rebuilds itself**
    when you change it).
 
-   > No LLM pull is required anymore. `llm_model` in the config is **off the hot
-   > path** — it's kept only for the optional, deferred local *reranker* (see
-   > "Reranking", below), which is not wired by default.
+   > No LLM pull is required. `llm_model` in the config is **off the hot path** —
+   > it's kept only for the optional, deferred local *reranker* (see "Reranking",
+   > below), which is not wired by default.
 
 2. Confirm the engine can reach Ollama:
    ```bash
@@ -82,23 +72,6 @@ markdown any time. **After swapping the embedder, run `--rebuild` once** (the to
 also refuses to search an index built by a different embedder, so you can't get
 silently-wrong results).
 
-## Deterministic world-scribe (no model)
-
-After a world tick selects who moved, template the routine movers and get the
-Claude hand-off manifest:
-
-```bash
-python Tools/world_tick.py               # metronome selects movers + collisions
-python Tools/world_scribe.py --dry-run   # SHOW what it would template + the manifest
-python Tools/world_scribe.py             # template routine movers → Game/developments.md
-```
-
-`world_scribe.py` writes routine movers into `Game/developments.md` as true,
-abstract facts (it never invents an event or a power), and prints a **hand-off
-manifest**: the collisions, the reflection/re-planning, and any pivotal movers.
-Work the manifest with `world-director-lite` (Sonnet) for the everyday beats and
-`world-director` (Opus) for secret-bearing pivots — see `CLAUDE.md`.
-
 ## Reranking (deferred — optional)
 
 `memory_search.maybe_rerank()` is a no-op seam. Ollama has **no native rerank
@@ -114,9 +87,7 @@ yes/no), or `bge-reranker-v2-m3` via a llama.cpp `/v1/rerank` server — and set
 python Tools/local_client.py --self-test
 python Tools/memory_index.py --self-test
 python Tools/memory_search.py --self-test     # covers BM25, RRF, boosts, firewall
-python Tools/world_scribe.py --self-test      # model-free templating + manifest
 python Tools/memory_index.py --dry-run        # real chunking over your files, no embeds
-python Tools/world_scribe.py --dry-run        # real templating, writes nothing
 ```
 
 ## What still needs YOUR machine to verify (the GPU integration)
@@ -127,5 +98,3 @@ python Tools/world_scribe.py --dry-run        # real templating, writes nothing
 3. `python Tools/memory_search.py "<something from your campaign>"` → relevant,
    day-stamped, cited results; an exact-name query surfaces the literal chunk;
    `--scope public` excludes every secret file.
-4. Compare a session's Claude token total against before — log it in
-   `Game/cost-ledger.md`.

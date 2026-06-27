@@ -2,11 +2,10 @@
 """Configuration for the Storyteller local-compute layer.
 
 The engine's expensive work is Claude (live play, player-facing prose). The
-*cheap, high-frequency* work — semantic retrieval, off-screen plot scribing,
-triage, summarizing — can run on a small model on the Player's own GPU. This
-module is the single place that knows where that local model lives and which
-models to use, so the tools (`memory_index`, `memory_search`, `world_scribe`)
-never hard-code it.
+*cheap, high-frequency* work — semantic retrieval — can run on a small model on
+the Player's own GPU. This module is the single place that knows where that local
+model lives and which models to use, so the tools (`memory_index`,
+`memory_search`) never hard-code it.
 
 Resolution order (first non-empty wins), per key:
     1. environment variable
@@ -21,19 +20,15 @@ import os
 import sys
 from pathlib import Path
 
-# Built-in defaults. Tuned for an RTX 4070 (12 GB). The ONLY model on the hot
-# path now is the embedder: it powers hybrid semantic retrieval (memory_*.py).
-# The generative local tier (the qwen plot-scribe/critic/reflector) has been
-# RETIRED — routine world moves are templated deterministically (world_scribe.py)
-# and the rest escalates to Claude. `llm_model` is therefore OFF the per-post hot
-# path; it is used only by two OPTIONAL, low-frequency paths that both degrade
-# gracefully when no model is pulled: world_health.py's tone/compliance read, and
-# the deferred reranker seam (memory_search.maybe_rerank). Override per-campaign
-# in Game/local-models.json or via the env vars below.
+# Built-in defaults. Tuned for an RTX 4070 (12 GB). The only model used is the
+# embedder: it powers hybrid semantic retrieval (memory_*.py). `llm_model` is
+# kept only for the deferred reranker seam (memory_search.maybe_rerank), which is
+# not wired by default — no LLM pull is required. Override per-campaign in
+# Game/local-models.json or via the env vars below.
 DEFAULTS = {
     "host": "http://localhost:11434",     # Ollama's default address
     "embed_model": "bge-m3",              # 1024-dim, MIT, strong hybrid retrieval (~1.2 GB)
-    "llm_model": "qwen3:14b",             # OFF the hot path — optional (world_health, reranker)
+    "llm_model": "qwen3:14b",             # optional — deferred reranker seam only
     "embed_timeout": 60,
     "llm_timeout": 300,
 }

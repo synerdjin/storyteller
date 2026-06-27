@@ -14,7 +14,7 @@ of truth, so the index is gitignored and can be regenerated any time.
 
 Every chunk is tagged with a VISIBILITY tier so retrieval can respect the
 engine's secret firewall:
-    secret  — gm-secrets, world-state, developments, plots, ledgers, secrets/drives/sheet
+    secret  — gm-secrets, per-character secrets/sheet, PC resource-log
     gm      — GM working files (timeline, threads, current-scene, campaign)
     public  — actor-safe (profile, memory, world lore, PC backstory)
     player  — player-facing (PLAYER-NOTES, Story/ chapters)
@@ -84,7 +84,6 @@ def classify(rel):
             "profile.md": ("public", "profile"),
             "memory.md": ("public", "memory"),
             "secrets.md": ("secret", "secrets"),
-            "drives.md": ("secret", "drives"),
             "sheet.md": ("secret", "sheet"),
         }.get(fn)
         return (m[0], owner, m[1]) if m else (None, None, None)
@@ -92,12 +91,7 @@ def classify(rel):
     if parts[0] == "Game":
         m = {
             "gm-secrets.md": ("secret", "gm-secrets"),
-            "world-state.md": ("secret", "world-state"),
-            "developments.md": ("secret", "developments"),
-            "plots.md": ("secret", "plots"),       # master registry: hidden/unaware plots
-            "ledgers.md": ("secret", "ledgers"),   # GM-only control ledgers
             "world.md": ("public", "lore"),
-            "world-dashboard.md": (None, None),  # generated god-view digest — skip
             "campaign.md": ("gm", "campaign"),
             "threads.md": ("gm", "threads"),
             "timeline.md": ("gm", "timeline"),
@@ -220,7 +214,7 @@ def _split_by_size(body):
 def chunk_file(rel, text, ftype):
     lines = text.splitlines()
     day_markers = sum(1 for ln in lines if DAY_LINE_RE.match(ln))
-    if ftype in ("timeline", "memory", "developments") or day_markers >= 2:
+    if ftype in ("timeline", "memory") or day_markers >= 2:
         raw = _chunk_by_day(lines)
     elif any(HEADING_RE.match(ln) for ln in lines):
         raw = _chunk_by_heading(lines)

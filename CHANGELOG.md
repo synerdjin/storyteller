@@ -11,6 +11,35 @@ Version numbers are `MAJOR.MINOR.PATCH`:
 
 ---
 
+## 3.0.0 — 2026-06-27
+
+### The living world is removed — Storyteller is a focused AI game master again
+
+After playtesting, the **living-world** layer (the independent off-screen "world beat and agenda" — NPCs and factions advancing their own goals and colliding on a deterministic metronome between the Player's posts) has been **removed** and moved to a separate project. Storyteller returns to what it does best: a fair, consistent AI game master that narrates scenes, voices NPCs, rolls honest dice, and keeps continuity — with the world's other characters now moved by **GM judgment**, in prose, rather than a tool loop.
+
+**Removed.**
+- Tools: `world_tick.py` (metronome), `world_scribe.py` (scribe), `world_dashboard.py`, `world_health.py`, `ledger.py` (contested-control ledgers), `social.py` (relationship-graph propagation), `firewall.py` (per-post leak scan), and `Tools/local-agents/health-auditor.md`.
+- Agents: `world-director` and `world-director-lite`.
+- Game state files: `plots.md`, `developments.md`, `world-state.md`, `ledgers.md`, `cost-ledger.md`.
+- Cast template: `Cast/_template/drives.md` (the agent model).
+- The `## Play mode` block in `Game/system.md` and the "Play mode — the engine's stance" section in `CLAUDE.md` (Dramatist/Simulationist/Evaluationist), which existed to tune how the living world was interpreted.
+
+**Kept.**
+- The full core engine: fair dice (`dice.py`), resource tracking (`resources.py`), cultural profiles (`cultural_profile.py`), story compilation (`story_compile.py`), the safe npc-actor briefing assembler (`actor_brief.py`), and the agents `campaign-architect`, `character-creator`, `npc-actor`, `chapter-renderer`.
+- The **hybrid semantic-memory** layer (`memory_index.py` / `memory_search.py` + the local embedder) — now a general "retrieve, don't re-read" convenience, decoupled from any world tooling. Its classification table dropped the removed files; the `--scope public` firewall still keeps secrets out of actor briefings.
+- `Game/threads.md` is now the single, standalone GM list of open quests and mysteries (it was the player-known slice of the removed `plots.md`).
+
+**Changed.** `campaign-architect` now seeds a *connected cast* whose goals and rivalries live as prose rather than a wired collision graph; `chapter-renderer` renders player-POV chapters only (the "meanwhile" off-screen-world mode is gone); `CRAFTING-NPCS.md` lever #5 keeps the "agency off-screen, friction with each other" craft advice but drops the `drives.md`/metronome machinery.
+
+### Campaign migration
+
+An in-progress campaign keeps playing — it simply no longer ticks itself. The GM moves NPCs and factions by hand, as it does any other part of the world.
+- The removed `Game/` files (`plots.md`, `developments.md`, `world-state.md`, `ledgers.md`, `cost-ledger.md`) and any `Cast/<name>/drives.md` are no longer read by the engine. They're harmless if left in place; you can archive or delete them. Anything you want to keep tracking — open plots the Player knows about — lives in `Game/threads.md`.
+- Running `update storyteller` will **not** delete your save data. If you had living agents, fold whatever you want to remember about their goals and rivalries into their `Cast/<name>/secrets.md` so the GM keeps playing them.
+- The semantic-memory index rebuilds itself: run `python Tools/memory_index.py --rebuild` once after updating.
+
+---
+
 ## 2.12.0 — 2026-06-19
 
 ### Living-world hygiene — three fixes drawn from a live campaign

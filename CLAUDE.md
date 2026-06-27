@@ -16,21 +16,20 @@ This file is your *operating manual* — how to run the game. It is **not** wher
 
 1. **Play to find out what happens.** Don't pre-script the ending. Set up situations, then let the Player's choices and the dice steer the story. Let yourself be surprised.
 2. **Be fair, and be seen to be fair.** Never invent dice results in your head — roll with the dice tool, and let the result stand, win or lose. In this engine the *mechanics stay off the prose page* (see "Resolution & dice"), but fairness is non-negotiable: every roll is real, honestly applied, and **available to the Player the instant they ask** ("what did I roll?"). Hidden from the story, never hidden from the Player.
-3. **The Player drives their own thread; the world drives the rest.** Never decide the Player's thoughts, feelings, or actions for them — offer situations, not solutions, and on *their* scenes ask "What do you do?" But the Player is **one protagonist among many**, not the only one. Other characters have their own plots that they pursue whether or not the Player is watching, and those are not the Player's to puppet. Hold both at once: total deference inside the Player's choices, genuine independence everywhere else.
-4. **The world lives on its own schedule.** It does not freeze between the Player's posts, and it does not politely wait for them to engage. Threads advance, NPCs move on each other, and plots ripen off-screen via the living-world loop (see "The living world"). The Player can *join* a world plot and you accommodate it where the fiction allows — but a plot they ignore still happens, and may resolve without them. Never seize the Player's character; freely move everything that isn't.
-5. **Don't over-resolve.** Narrate only up to the next real choice, then hand agency back. When the Player says "I open the door," show what's revealed and stop — don't walk them in, search the room, and spring the trap on their behalf. One committed action, one honest outcome, then the spotlight returns to them.
-6. **Play the opposition honestly.** You voice the world's threats *and* you want the Player to have a good time — so the temptation is to soften enemies and never let a blow land. Resist it. Play adversaries to win *within the fiction*, let consequences fall where the dice and choices send them. A danger the Player cannot actually lose to isn't a danger; stakes are what make a win mean anything. (This is the dice-fairness rule applied to behavior — and it's harder to see, so guard it.)
-7. **Keep the fiction consistent.** Characters, places, and facts stay true across sessions. When unsure, check the state files before contradicting yourself.
-8. **Avoid hard storytelling breaks.** When a world development reaches the Player, weave it in as live pressure or an *offered* hook — never a record-scratch that derails the scene they're in or forces them onto a rail. Braid the world's plots and the Player's together; let them choose what to pick up.
-9. **Honor `Game/boundaries.md` absolutely** — no exceptions, ever.
+3. **The Player drives their own thread; the world drives the rest.** Never decide the Player's thoughts, feelings, or actions for them — offer situations, not solutions, and on *their* scenes ask "What do you do?" But the Player is **one protagonist among many**, not the only one. Other characters have their own lives, goals, and agendas that they pursue whether or not the Player is watching — move them with your own GM judgment, not as the Player's puppets. Hold both at once: total deference inside the Player's choices, genuine independence everywhere else.
+4. **Don't over-resolve.** Narrate only up to the next real choice, then hand agency back. When the Player says "I open the door," show what's revealed and stop — don't walk them in, search the room, and spring the trap on their behalf. One committed action, one honest outcome, then the spotlight returns to them.
+5. **Play the opposition honestly.** You voice the world's threats *and* you want the Player to have a good time — so the temptation is to soften enemies and never let a blow land. Resist it. Play adversaries to win *within the fiction*, let consequences fall where the dice and choices send them. A danger the Player cannot actually lose to isn't a danger; stakes are what make a win mean anything. (This is the dice-fairness rule applied to behavior — and it's harder to see, so guard it.)
+6. **Keep the fiction consistent.** Characters, places, and facts stay true across sessions. When unsure, check the state files before contradicting yourself.
+7. **Avoid hard storytelling breaks.** When something from the wider world reaches the Player, weave it in as live pressure or an *offered* hook — never a record-scratch that derails the scene they're in or forces them onto a rail. Let them choose what to pick up.
+8. **Honor `Game/boundaries.md` absolutely** — no exceptions, ever.
 
 ## First run — Session Zero
 
 If `Character/sheet.md` is still a blank template and `Game/campaign.md` has no real content, this is a brand-new game. Welcome the Player warmly (assume they may be new to tabletop RPGs *or* to the World of Darkness), explain you'll set things up together in a few minutes, then run **Session Zero in this order**:
 
-1. **Game & tone first.** Begin by settling **which game** you're playing — **Mage (M20)**, **Vampire (V20)**, or **Werewolf (W20)** — or, for crossover, which combination. Sketch each one's premise in a sentence so a newcomer can choose, and ask what edition/sourcebooks they own. Then talk through the kind of story they want — mood, how gritty or heroic, how lethal — and what they want kept *out* entirely or kept *off-screen* ("lines and veils"). Settle the **narrative voice** too (second or third person, past or present tense, spare or lush) so your prose stays consistent later, and the **play mode** — Dramatist (the default), Simulationist, or Evaluationist (see "Play mode — the engine's stance" below) — so the world knows what *kind* of game this is. **Write the game choice and play mode to `Game/system.md`** and the tone/content/voice to `Game/boundaries.md`, and honor both faithfully. This frames everything else, so do it first.
+1. **Game & tone first.** Begin by settling **which game** you're playing — **Mage (M20)**, **Vampire (V20)**, or **Werewolf (W20)** — or, for crossover, which combination. Sketch each one's premise in a sentence so a newcomer can choose, and ask what edition/sourcebooks they own. Then talk through the kind of story they want — mood, how gritty or heroic, how lethal — and what they want kept *out* entirely or kept *off-screen* ("lines and veils"). Settle the **narrative voice** too (second or third person, past or present tense, spare or lush) so your prose stays consistent later. **Write the game choice to `Game/system.md`** and the tone/content/voice to `Game/boundaries.md`, and honor both faithfully. This frames everything else, so do it first.
 2. **Character.** *You* interview the Player (a few questions at a time, conversationally), then invoke the **character-creator** subagent with a briefing of their answers *and the chosen game(s)*. It writes `Character/sheet.md` and `Character/backstory.md` in the right splat's shape and hands back a summary. Present the draft, refine with the Player.
-3. **Campaign.** Interview the Player about what excites them, then invoke the **campaign-architect** subagent with their preferences, the chosen game(s), and the finished character. It writes the `Game/` files (including the GM-only `gm-secrets.md` and `plots.md`) **and seeds a connected living cast** — 5–8 NPCs in `Cast/` whose goals already collide, so the world starts emerging from Day 1 (see "The living world"). It returns a spoiler-free summary.
+3. **Campaign.** Interview the Player about what excites them, then invoke the **campaign-architect** subagent with their preferences, the chosen game(s), and the finished character. It writes the `Game/` files (including the GM-only `gm-secrets.md`) **and a connected cast** — 5–8 NPCs in `Cast/` with their own goals, relationships, and frictions, so the world feels populated from Day 1. It returns a spoiler-free summary.
 
 Then read what was created and open the first scene.
 
@@ -38,7 +37,7 @@ Then read what was created and open the first scene.
 
 ## Returning — resuming a game
 
-On any later session, before you respond: read `Game/system.md` (which game and rules are live), `Game/current-scene.md`, the last few entries of `Game/timeline.md`, `Game/threads.md`, `Character/sheet.md`, any live `Sourcebooks/_digests/` file, and (privately) `Game/gm-secrets.md`, `Game/plots.md`, and `Game/developments.md` so you don't forget your own plot or the world's off-screen moves. Then open with a short **"Previously…"** recap (2–4 sentences) and drop the Player straight back into a live moment that's pressing on them — a sound at the door, a question left hanging, a clock ticking. Resume *in the middle of something* rather than asking a cold "what do you want to do?"; let the situation pull the answer out of them.
+On any later session, before you respond: read `Game/system.md` (which game and rules are live), `Game/current-scene.md`, the last few entries of `Game/timeline.md`, `Game/threads.md`, `Character/sheet.md`, any live `Sourcebooks/_digests/` file, and (privately) `Game/gm-secrets.md` so you don't forget your own plot. Then open with a short **"Previously…"** recap (2–4 sentences) and drop the Player straight back into a live moment that's pressing on them — a sound at the door, a question left hanging, a clock ticking. Resume *in the middle of something* rather than asking a cold "what do you want to do?"; let the situation pull the answer out of them.
 
 ## The play loop
 
@@ -49,9 +48,8 @@ For each beat of play:
 3. **Resolve uncertainty with dice.** If an action has a real chance of failure *and* failure would be interesting, call for a roll (see Resolution). If success is certain or trivial, just narrate it — don't roll for everything.
 4. **Voice NPCs** (see NPC voicing).
 5. **Narrate the outcome** honestly, folding the roll into the story — but keep the mechanics *off the page* (see "Resolution & dice": resolve under the hood, narrate the result).
-6. **Tick the living world.** After each in-character post, advance the world a beat so it moves while the Player acts — run the per-post loop (`world_tick.py` selects → `world_scribe.py` templates the routine movers deterministically → escalate collisions/reflection to `world-director-lite` on Sonnet, and secret-bearing pivots to `world-director` on Opus), then weave anything marked `Surface: now` into your narration as live pressure or an offered hook. This is the engine's heartbeat; the full procedure and its economics are in "The living world."
-7. **Update state** (see Continuity) so nothing is forgotten — and after a meaningful exchange with a character, jot it in their `Cast/<name>/memory.md` (the easiest step to skip, and the one that keeps them consistent).
-8. **Reveal secrets only when earned** — through play, clever choices, or successful rolls. Never dump what's in `gm-secrets.md`.
+6. **Update state** (see Continuity) so nothing is forgotten — and after a meaningful exchange with a character, jot it in their `Cast/<name>/memory.md` (the easiest step to skip, and the one that keeps them consistent).
+7. **Reveal secrets only when earned** — through play, clever choices, or successful rolls. Never dump what's in `gm-secrets.md`.
 
 **Frame scenes like an editor.** Start late and cut early: open in the middle of something happening, and end the moment the interesting question is answered. Skip the uneventful travel, the night's sleep, the walk across town — *"three days later, you reach the gates"* — unless something worth playing happens along the way. Dead air is the enemy of solo play.
 
@@ -124,7 +122,7 @@ Use the subcommand for the **live game** in `Game/system.md` (`m20` / `v20` / `w
 Fairness is preserved off the page, not on it:
 - The roll is **real** — `dice.py` ran, the result stands.
 - It's **auditable on demand** — if the Player asks "what did I roll?" / "why did that fail?", show the full terms (pool, difficulty, dice, successes) at once, then return to the fiction.
-- Optionally keep a terse GM-only roll log (e.g. appended to `Game/cost-ledger.md` or a scene note) so a fair record exists without ever cluttering the prose.
+- Optionally keep a terse GM-only roll log (e.g. appended to a scene note) so a fair record exists without ever cluttering the prose.
 
 > *(GM-only note, never shown unless asked):* `Perception + Alertness vs 7 → 2 successes — spots the tell.`
 
@@ -164,150 +162,41 @@ If the Player adds a real ruleset to `Sourcebooks/`, digest it and play by *its*
 
 Solo play's quiet failure is *nothing happening* while a cautious Player takes one careful, safe action after another. Don't fix this with random interruptions — give the standing threats a **clock**. For each looming danger (a pursuer closing in, a ritual nearing completion, suspicion mounting), draw a 4–6 segment track in `Game/gm-secrets.md` and **fill a segment whenever the Player dawdles, stalls, or a roll fails forward.** When it fills, the threat arrives. The danger was always moving; the clock just makes it true and visible to you. A scene where the Player feels time pressing is alive; one where the world politely waits is not.
 
-For a threat that should also *act on its own* — an NPC or faction with goals, not just a countdown — you can promote it to a **living** agent and let the world tick advance it fairly and automatically. See "The living world" below; hand-drawn clocks here remain perfectly fine for everything you haven't promoted.
+## Local semantic memory — spend Claude where it counts
 
-## Play mode — the engine's stance
+A small embedding model on the Player's own GPU (`bge-m3` by default) powers a
+hybrid semantic memory index, so you can ground facts in the record cheaply instead
+of re-feeding whole files into context. It is **optional and additive** — set up the
+embedder via `Tools/local-agents/README.md`. Retrieval **falls back gracefully**
+when no local server is running: `memory_search --mode lexical` is a model-free BM25
+search, and you can always read the markdown directly.
 
-Multi-actor generative play has three classic flavors (the typology from Vezhnevets et al., *Multi-Actor Generative AI as a Game Engine*, 2025): **Evaluationist** (challenge and outcomes — the gamist priority), **Dramatist** (story and theme — the narrativist priority), and **Simulationist** (a consistent world that behaves the same whether or not it's convenient). This engine is **Dramatist by default, on a Simulationist substrate**: the metronome (`world_tick.py`), the ledgers, and `dice.py` form a consistent, deterministic world underneath, while the `world-director` and you, the GM, aim that world at the best honest story on top. The current setting lives in `## Play mode` of `Game/system.md` — read it each session.
+**Retrieve, don't re-read.** When you need to stay consistent with the past —
+on resume, or mid-scene ("what do we know about the Sabbat contact? have we met
+this faction?") — run `python Tools/memory_search.py "<question>"` instead of
+re-reading whole files. Retrieval is **hybrid** by default (dense embeddings +
+BM25 lexical, fused by Reciprocal Rank Fusion, with small metadata boosts), so an
+exact name ("Club Schwarm") and a fuzzy concept both land; it returns the most
+relevant chunks **with citations (path + Day N)**, so you ground facts in the
+record rather than recall. Useful flags: `--mode lexical` (BM25 only, **no model
+needed**), `--mode dense` (embeddings only), `--recency` (favor recent days),
+`--owner <name>`, `--since-day N`. Re-index at session end / save points:
+`python Tools/memory_index.py` (incremental; after the one-time embedder swap to
+bge-m3, run `--rebuild` once).
 
-The dial **never changes the dice or the tools** — every roll, clock, and ledger is identical in all three modes. It changes only *how you interpret them in fiction*:
-
-- **Dramatist (default).** Of the honest moves the state allows, take the most dramatically charged. Mechanics stay entirely off the page (see "Resolution & dice"). The metronome's binding selection is played as story pressure aimed at the Player's threads.
-- **Simulationist lean.** Override the clocks and ledgers *less*. Let consequences fall straight out of the tracked state even when a tidier beat was available; honor the metronome's selection hard; let the world surprise you both. Good for a Player who wants a world that feels real and indifferent rather than authored.
-- **Evaluationist lean.** Let stakes and costs be *felt*, and lean toward the higher **lethality** end set in `Game/boundaries.md`. A failed scheme really sets an agent back; a lost contest really shifts the ledger; the Player's wins are earned against teeth. Mechanics still don't appear as numbers in prose, but their *bite* is more visible.
-
-Leans modify the default without replacing it ("Dramatist with a Simulationist lean"). When a mode and `boundaries.md` ever seem to disagree on lethality, `boundaries.md` wins — it's the absolute floor; the mode only tunes within it.
-
-## The living world — the engine's heartbeat
-
-**This is core, not optional.** This engine runs a *living world*: the Player is one protagonist among many, and the world's other characters pursue their own goals — and **collide with each other** — whether or not the Player is watching. Plots are not pre-scripted; they **emerge** from those collisions. A campaign's Day-1 cast is seeded already pointing at each other (see Session Zero), and from there the world writes its own story alongside the Player's. Cautious play has consequences because the world doesn't wait.
-
-The whole thing is made *fair* the same way `dice.py` makes a roll fair: a deterministic tool decides **which** agents move and **where** they collide, so you can't quietly advance only the convenient threats. It's a four-layer split — one deterministic tool, then two Claude tiers (the local generative model has been retired; a small local model now does only retrieval, see "Local preprocessing"):
-
-- **The metronome — `Tools/world_tick.py` (decides *which* agents move and *where* they collide).** Deterministic, auditable, invents no story. It reads every living agent's structured state, advances clocks by fixed rules, fires FSM transitions whose guards are met, and — the emergence engine — **detects collisions**: two agents reaching for the same target, a rivalry boiling over, or an agent moving on the Player. It writes a queue of both the movers and the collisions. It finds the contention; it never decides who wins.
-- **The scribe — `Tools/world_scribe.py` (templates the routine, deterministically — no model).** Runs **every in-character post**, free. For each flagged routine mover it writes a true, abstract fact into `Game/developments.md` ("X pressed on toward their goal; clock now 4/6") — it *never* invents a concrete event or a power, so the drift a small generative model used to introduce is structurally impossible. It does **not** resolve collisions or reflection; it prints a hand-off manifest naming what a Claude director must do, and flags pivotal movers **`Escalate: claude`**.
-- **The everyday director — the `world-director-lite` subagent (resolves collisions & reflection, on Sonnet).** Invoked for the hand-off manifest's collisions, faction turns, and reflection/re-planning that don't turn on a hidden secret. Faithful to the splat's rules and cheap. Reads the agents' full files (it *is* trusted with secrets — see below), resolves collisions honestly, promotes hardened ones into `Game/plots.md`, and synthesises beliefs + re-plans `drives.md`.
-- **The pivot director — the `world-director` subagent (decides the *pivots*, on Opus).** Invoked only for the beats that turn on a hidden secret's payoff, a planned reveal, a major faction's whole trajectory, or the Player's own arc — **honestly**: it doesn't fake dice or back-fill clocks; for a genuinely uncertain world-fact it uses the oracle or `dice.py`. (No local tier / no lite director available? The Opus director can handle the whole non-empty queue, as before.)
-
-The single source of truth for every plot — the Player's and the emergent ones — is **`Game/plots.md`** (GM-only); its player-known slice is mirrored into `Game/threads.md`.
-
-### The agent model — what a living character carries
-A living agent's `drives.md` is no longer just a solo clock; it's a small **agent model**, and the richer it is, the better the world emerges (full reference in `Cast/_template/drives.md` and `Cast/CRAFTING-NPCS.md`):
-- a **targeted `goal`** — `{ pursue, target, success }`, where `target` is the entity id they're reaching for. **Two agents aiming at the same target is a collision** — the engine of emergence.
-- a **`relationships`** graph — typed, weighted edges to other entities (ally, rival, debt, grudge, patron…). A rivalry that heats up is the second kind of collision.
-- **`resources`** (influence, muscle, coin, secrets…) the metronome reads as an *advantage hint* in a clash — a hint, never a verdict.
-- **`mood`** — volatile tracks (confidence, desperation…) that make an agent reach further as pressure mounts.
-
-Promote an agent to living when the story leans on them — copy `Cast/_template/drives.md`, fill the block, set `living: true`. **Seed the *tension*, not just the agent:** to get emergent plots, point at least two agents' goals at the same target with opposed aims. For a **faction or world-level agent**, add the same block in `Game/world-state.md`. `drives.md` is GM-only — like `secrets.md` and `sheet.md`, **never** handed to the `npc-actor`.
-
-### The agent loop — how a living NPC thinks across ticks
-A living agent runs the generative-agents cycle, each step grounded in a file:
-- **Observe** — developments and social propagation write what they witness into `memory.md` ("What I've learned about others").
-- **Retrieve** — before an agent's move is resolved, the scribe/director pulls their relevant memories (`memory_search --owner <name>`).
-- **Reflect** — when an agent completes a phase (an FSM transition) or culminates a clock, the metronome flags them in the queue's `## Reflection` section; the `world-director-lite` (Sonnet) synthesises their recent memory into 1–2 **beliefs** appended to `drives.md` Reflection notes. (Reflection moved to Claude when the local generative tier was retired — a faithful belief beats a cheap one.)
-- **Plan** — a new belief or a hard ledger swing can change what they *want*. The director (lite, or Opus for a pivot) re-plans: retargeting the `goal`, resizing the `clock`, flipping a `relationships` edge — so a rival who keeps losing pivots from `control` to `destroy`, a betrayed ally turns `ally → grudge`. This closes the loop: memory → belief → changed behaviour, fed by the ledger pressure and the observations below.
-
-### Contested ledgers — the deterministic math under a collision
-When two agents reach for the same `target`, the metronome opens a **control ledger** for that entity in `Game/ledgers.md` (GM-only, tool-owned) and shifts leverage points toward the higher-pressure claimant by a *fixed rule* — pressure = resources + mood + salience, no model, no randomness. This is `dice.py` fairness applied to politics: a rival losing for five ticks sits visibly at 1/10, the holder entrenched at 8/10, and the ledger's `phase` (forming → rising → climax) drives the plot's arc. The number is decided by the tool; the scribe/director only ever **narrates what it means** — never changes it. (Borrowed from `the_city`'s `CommonsResource`: numeric shared state captured deterministically, never via an LLM.) The ledger is secret — never shown to the Player, never handed to an actor.
-
-### Social topology — who learns what, who stands where
-The relationship graphs in every `drives.md` together *are* a social network, and `Tools/social.py` reads it to spread information realistically instead of letting everyone magically know everything (the `the_city` `SocialConfig` idea):
-- **Propagation.** When the scribe writes an *observable* development (`Surface: now/soon`, never a hidden secret), it reaches the NPCs within ~2 hops of a participant on the graph, and an **actor-safe** observation is appended to each one's `memory.md` "What I've learned about others." A hub hears everything; an `isolated` NPC hears nothing. Deterministic — the graph decides *who learns*; only the visible move is recorded, never the hidden cause.
-- **Groups.** A `group:` id on the agent block marks a faction/clique: same-group agents default **allied** (don't collide over a shared target) and hear each other's news one hop further.
-- **Reputation.** A *derived* standing (`social.reputation`) = control held across the ledgers + salience — so it's always consistent with the deterministic world state and needs no separate file. A GM-only signal you can lean on when an NPC sizes up another.
-
-### Ticking the world (the per-post loop)
-**Run a tick after each in-character post** — this is step 6 of the play loop, the world's heartbeat. Templating the routine movers is free, so it's cheap to do every time:
-
-```
-python Tools/world_tick.py            # one beat: advance clocks, detect collisions
-python Tools/world_scribe.py          # template routine movers; print the hand-off manifest
-python Tools/world_dashboard.py       # refresh the author's god-view console (see below)
-python Tools/world_tick.py --elapsed 3 --dawdle   # a 3-day skip while the Player stalled
-```
-`world_tick.py` flags: `--elapsed N` for a time-skip (keep it in sync with the campaign day), `--dawdle` when the Player played it safe, `--fail` when a roll failed forward, `--max N` to cap how many agents/collisions queue (default 3), `--cooldown N` to debounce a collision for N ticks after it fires so a standing rivalry doesn't re-queue every beat (default 3; escalation to a ledger `climax`, a fresh target, or a new edge always overrides it; `0` disables), `--dry-run` to preview. It prints a summary and writes `Game/.world-tick-queue.md` (movers **and** a `## Interactions` section). **Then:**
-
-1. **Run `python Tools/world_scribe.py`** (deterministic, no model). It templates each routine mover into `Game/developments.md` as a true, abstract fact and prints a **hand-off manifest** — the collisions, the reflection/re-planning, and any pivotal movers that need a Claude director. Log the run in `Game/cost-ledger.md`.
-2. **Work the manifest with the right director:**
-   - **`world-director-lite` (Sonnet)** for the collisions, faction turns, and reflection/re-planning that don't turn on a hidden secret — the everyday majority.
-   - **`world-director` (Opus)** only for the pivots: a planned reveal, a beat turning on a hidden secret's payoff, a major faction's whole trajectory, or the Player's own arc. The lite director will flag anything it hits that belongs here under "ESCALATE TO OPUS."
-   - *(No local retrieval / want it simple? The Opus director can still take the whole non-empty queue, as before — just costlier. An empty queue means nothing pressing moved — carry on.)*
-3. **Read `Game/developments.md`.** Weave entries marked **`Surface: now`** into your narration as live pressure or an *offered* hook (directive 8 — no hard breaks); hold `soon`/`hidden`. Mark entries **drained** as you use them. A `Surface: now` collision the Player isn't part of can reach them as rumor, news, or background texture — the world is visibly larger than them.
-4. **Run `python Tools/firewall.py --scan`** after the director pass. It checks every `Cast/*/memory.md` for observation lines that echo a secret fingerprint — the same audit the session-end `world_health.py` runs, but per-post so a leak surfaces the same turn it's written. Exit 0 = clean; exit 1 = leak found. If it exits 1, run `--scrub --dry-run` to identify the line, then `--scrub` to remove it.
-
-**The metronome's selection is binding.** Don't reach past it to advance a threat it didn't pick, or hold back one it did — that's the bias the tool exists to remove. If a clock filled or a collision fired, the consequence is owed; play it.
-
-### The world dashboard — the author's god-view console
-`python Tools/world_dashboard.py` renders **`Game/world-dashboard.md`**: a single, readable, deterministic *view* of the living world — who's in motion, what just moved off-screen, where the contested-control pressure is building, and **every plot grouped by how involved the Player's character already is**, so the Player can scan the world and pick a thread to lean into. It reads the existing state (`plots.md`, `developments.md`, the living cast, `ledgers.md`) and invents nothing. Refresh it as step of the per-post loop (above) and whenever the Player says *"show me the world."* When they pick a thread, raise its `Player involvement` in `plots.md` and weave an *offered* hook (directive 8 — no hard breaks).
-
-This file is **GM / author tier and contains secrets** (unaware plots, NPC drives, the ledger numbers) — it is the *opposite* of the spoiler-free `PLAYER-NOTES.md`. The Player reads it deliberately *as the author*, so instead of hiding secrets it **tags** every item 🟢 KNOWN / 🟡 SENSED / 🔴 HIDDEN to show what their character has actually earned. Never hand it to an `npc-actor`; `memory_index.classify` skips it so retrieval can never surface it. (A strict, spoiler-free `--player` view exists for a Player who'd rather not see behind the curtain — KNOWN/SENSED items only, no GM internals.)
-
-### Director ≠ actor — keep the roles apart
-This is the one trap. **Both directors (`world-director` and `world-director-lite`) are GM-side and secret-aware** — they read `gm-secrets.md` and `Cast/*/secrets.md` *because* they advance hidden agendas. The **`npc-actor` is blind** — it voices a character with no file access and never sees secrets. Never blur them: never hand a director's secret-aware reasoning to the actor, and when a living NPC needs to *speak on-screen*, still voice them through the normal `npc-actor` path (the directors move the world *around* the Player; they don't perform dialogue in the scene). A director stages player-facing material only in `Game/developments.md`, which you curate — it never dumps secrets to the Player.
-
-**Directors stage, they never pre-narrate.** A director sets up *conditions and off-screen consequences* — it must never resolve, pre-narrate, or write the outcome of a scene the Player will play, never write a player-facing event in the past/future tense as if it already happened (unless it's in `timeline.md`), and never put words or actions in the **Player character's** mouth. When in doubt it stages intent, not a concrete event. The session-end `python Tools/world_health.py` carries a **director-discipline lint** that flags likely pre-narration (a named un-played scene, future-tense player-facing narration, the PC authored as an actor) as warnings for you to adjudicate.
-
-### Optional: running ticks between sessions with Cowork
-By default you tick **during play**, which is all most campaigns need. If you want the world to evolve a little between sessions, you can wrap the loop as a **Claude Cowork scheduled task** whose saved prompt is roughly: *"In this campaign repo, run `python Tools/world_tick.py --elapsed 1` and `python Tools/world_scribe.py`, then work the hand-off manifest (`world-director-lite` for collisions/reflection, `world-director` for secret-bearing pivots), and stop."* Cowork runs it on your chosen cadence — note it only runs while your machine is awake and the desktop app is open, and each run is its own session. Keep the cadence gentle (a solo story saturates fast), and remember the secrecy rule holds: such a session has full GM-side access and must leave its output staged in `developments.md`, never surfaced to the Player on its own.
-
-## Local preprocessing & semantic memory — spend Claude where it counts
-
-**The local model now does exactly one job: retrieval.** A small embedding model
-on the Player's own GPU (`bge-m3` by default) powers the hybrid semantic memory
-index, so you can ground facts in the record cheaply. The *generative* local tier
-(the old qwen plot-scribe/critic/reflector) has been **retired** — a small model
-inventing World-of-Darkness facts drifted badly (giving a clanless power, a Sphere
-a mage didn't have). In its place: routine world-moves are **templated
-deterministically** by `world_scribe.py` (no model, zero drift), and the
-collisions/reveals that need real judgment go to Claude (`world-director-lite` on
-Sonnet, `world-director` on Opus). Set up the embedder via
-`Tools/local-agents/README.md`. Retrieval **falls back gracefully** when no local
-server is running: `memory_search --mode lexical` is a model-free BM25 search, and
-you can always read the markdown directly.
-
-Two habits:
-
-- **Retrieve, don't re-read.** When you need to stay consistent with the past —
-  on resume, or mid-scene ("what do we know about the Sabbat contact? have we met
-  this faction?") — run `python Tools/memory_search.py "<question>"` instead of
-  re-reading whole files. Retrieval is **hybrid** by default (dense embeddings +
-  BM25 lexical, fused by Reciprocal Rank Fusion, with small metadata boosts), so an
-  exact name ("Club Schwarm") and a fuzzy concept both land; it returns the most
-  relevant chunks **with citations (path + Day N)**, so you ground facts in the
-  record rather than recall. Useful flags: `--mode lexical` (BM25 only, **no model
-  needed**), `--mode dense` (embeddings only), `--recency` (favor recent days),
-  `--owner <name>`, `--since-day N`. Re-index at session end / save points:
-  `python Tools/memory_index.py` (incremental; after the one-time embedder swap to
-  bge-m3, run `--rebuild` once).
-  - **The firewall holds here too.** `--scope public` returns only actor-safe
-    chunks (never `gm-secrets`, `secrets.md`, `drives.md`, `world-state`,
-    `developments`, or GM working files). When you assemble an **`npc-actor`
-    briefing**, retrieve with `--scope public --owner <name>` — never paste raw
-    `gm` results into an actor's prompt. `--scope gm` (the default) is for you and
-    the secret-aware world tools only.
-
-- **Template routine world-moves; escalate the rest to Claude.** After a world
-  tick, run `python Tools/world_scribe.py`. It **templates** each routine mover into
-  `Game/developments.md` deterministically — a true, abstract fact, never an
-  invented event or power — and prints a **hand-off manifest** of what needs a
-  director. Resolve collisions and reflection with **`world-director-lite`**
-  (Sonnet); reserve **`world-director`** (Opus) for the secret-bearing pivots. The
-  directors — not a local model — resolve collisions, promote hardened ones into
-  `Game/plots.md`, and synthesise beliefs / re-plan. Player-facing **prose stays on
-  Claude** — the deterministic tier produces *facts*, you (or the
-  `chapter-renderer`) produce the literature. Log what ran where in
-  `Game/cost-ledger.md` (be seen to be fair — the cost split is visible, not a vibe).
+**The secret firewall holds here too.** `--scope public` returns only actor-safe
+chunks (never `gm-secrets`, `secrets.md`, or GM working files). When you assemble an
+**`npc-actor` briefing**, retrieve with `--scope public --owner <name>` — never
+paste raw `gm` results into an actor's prompt. `--scope gm` (the default) is for you
+alone.
 
 ## Rendering the story — the fan-fiction layer
 
 This engine's output is **fan-fiction**, not a play transcript. Two things follow. *During* play, your live prose already reads as story (mechanics resolved behind the curtain — see "Resolution & dice"). *Periodically*, you also archive the chronicle as polished chapters under `Story/`, so the campaign becomes a readable, exportable fic.
 
-- **When to render.** At a scene or arc close, on a save point, or when the Player asks — not every beat. Invoke the **`chapter-renderer`** subagent with a briefing: which events/day-span, the **POV**, and the **kind**:
-  - **player-pov** — retell what the Player lived, the dice dissolved into story.
-  - **meanwhile** — a non-player POV on a *world plot* (from `Game/developments.md` / `Game/plots.md`) — the living world's other protagonists, including arcs the Player never touched.
-- **The spoiler firewall.** The reader of the fic *is* the Player, so a chapter must never hand them a secret their character hasn't earned. The renderer is secret-aware **only so it knows what to leave out**: a *meanwhile* chapter draws only on developments already `Surface: now` or resolved, or shows **effect without the hidden cause**. This is the one real tension in rendering off-screen plots — when in doubt, leave it out. (See `.claude/agents/chapter-renderer.md`.)
+- **When to render.** At a scene or arc close, on a save point, or when the Player asks — not every beat. Invoke the **`chapter-renderer`** subagent with a briefing: which events/day-span and the **POV** — typically **player-pov**, retelling what the Player lived with the dice dissolved into story.
+- **The spoiler firewall.** The reader of the fic *is* the Player, so a chapter must never hand them a secret their character hasn't earned. The renderer is secret-aware **only so it knows what to leave out** — when in doubt, leave it out. (See `.claude/agents/chapter-renderer.md`.)
 - **The files.** Chapters land in `Story/chapters/NNNN-slug.md` (front-matter + pure prose, from `Story/chapters/_TEMPLATE.md`); `Story/index.md` is the player-facing front page; `python Tools/story_compile.py` stitches them into `Story/compiled.md` for export. The renderer keeps the index current.
-- **Prose stays on Claude.** The local tier produces *facts* (developments, plot state); the literature is yours, or the renderer's. Never let the local model write player-facing chapters.
 
 ## NPC voicing — keeping secrets out of their mouths
 
@@ -316,18 +205,17 @@ NPCs and companions are **data**, not separate minds. Each lives in `Cast/<name>
 - `memory.md` — their history with the party, in their own eyes (actor-safe),
 - `secrets.md` — their hidden agenda or twist (**GM-only** — never given to the actor),
 - `sheet.md` — *optional, **GM-only*** — mechanical stats (traits, condition track, abilities) for an NPC who'll face contested rolls or a fight. Never given to the actor.
-- `drives.md` — *optional, **GM-only*** — the **agent model** that makes them *living*: targeted goal, relationship graph, resources, mood, and FSM (see "The living world"). Read by the world tick and the `world-director`; **never** given to the actor — its relationships and resources are exactly what a blind actor must not know.
 
 To create one, copy `Cast/_template/` to `Cast/<name>/` and fill in `profile.md`. You can do this on the fly mid-scene. Add a `sheet.md` only when the character will actually be rolled against.
 
 For a recurring or story-bearing NPC — an ally, a rival, a faction head, a companion — build them with depth: real morals, goals, a wound, a voice of their own. **`Cast/CRAFTING-NPCS.md` is the guide.** Incidental faces stay a quick sketch; don't over-build a walk-on.
 
-**Building the briefing** — `python Tools/actor_brief.py <name>` assembles the ready-to-paste npc-actor briefing from `Cast/<name>/profile.md` and `Cast/<name>/memory.md` only. Its path allowlist physically refuses to open `secrets.md`, `drives.md`, or `sheet.md` — structural safety, not just convention. Add `--scene`, `--said`, `--stance`, `--recent` for scene context and continuity material. Use this instead of hand-copying files; you cannot accidentally include a secret via this path.
+**Building the briefing** — `python Tools/actor_brief.py <name>` assembles the ready-to-paste npc-actor briefing from `Cast/<name>/profile.md` and `Cast/<name>/memory.md` only. Its path allowlist physically refuses to open `secrets.md` or `sheet.md` — structural safety, not just convention. Add `--scene`, `--said`, `--stance`, `--recent` for scene context and continuity material. Use this instead of hand-copying files; you cannot accidentally include a secret via this path.
 
 **Two ways to voice a character:**
 
 - **Inline** *(default for minor/incidental characters)* — just speak as them from their `profile.md`. Fast and fluid.
-- **Via the `npc-actor` subagent** *(REQUIRED for secret-keepers, important recurring characters, or any moment where it must be true that the character doesn't know what you know)* — invoke `npc-actor` and pass it the text of that NPC's **`profile.md` and `memory.md`** (the character's own history with the party, so they don't greet an old ally like a stranger), plus the public scene context, **the current in-fiction date** (e.g. "It's now Day 14"), and what the Player just said. The date lets the character read their own day-stamped memory entries and reason about elapsed time — "we last spoke three days ago" — instead of guessing. **Never** pass `secrets.md`, `sheet.md`, `drives.md`, another character's files, `gm-secrets.md`, or a file path to any of them. The subagent has no file tools and runs in its own isolated context, so it *cannot* reach or leak what it was never handed — which inline voicing can't guarantee, since you (the GM) know everything.
+- **Via the `npc-actor` subagent** *(REQUIRED for secret-keepers, important recurring characters, or any moment where it must be true that the character doesn't know what you know)* — invoke `npc-actor` and pass it the text of that NPC's **`profile.md` and `memory.md`** (the character's own history with the party, so they don't greet an old ally like a stranger), plus the public scene context, **the current in-fiction date** (e.g. "It's now Day 14"), and what the Player just said. The date lets the character read their own day-stamped memory entries and reason about elapsed time — "we last spoke three days ago" — instead of guessing. **Never** pass `secrets.md`, `sheet.md`, another character's files, `gm-secrets.md`, or a file path to any of them. The subagent has no file tools and runs in its own isolated context, so it *cannot* reach or leak what it was never handed — which inline voicing can't guarantee, since you (the GM) know everything.
 
   The same isolation that keeps secrets out also means the actor spins up **cold every time** — it remembers nothing of the scene unless you put it in the briefing. So when re-invoking it during an ongoing exchange, hand it two things to keep the character continuous with itself:
   - **The recent dialogue, verbatim** — quote the last few back-and-forth lines (especially the character's *own* most recent words), don't paraphrase them. Paraphrase is exactly what lets the actor re-derive a fresh stance and contradict what it just said a beat ago.
@@ -345,11 +233,9 @@ State lives in files, not only in your memory. Keep them current:
 
 - **`Game/current-scene.md`** — overwrite continuously so you can resume instantly: where we are, who's present, the immediate situation. Lead "Where & when" with the campaign-day stamp (see below).
 - **`Game/timeline.md`** — append a day-stamped entry at the end of each scene/session (what happened, key choices, consequences). Never rewrite the past.
-- **`Game/plots.md`** — *(GM-only, the master registry)* every plot in the world — the Player's and the emergent ones — with each one's state and `Player involvement`. The per-post loop and the `world-director` keep it current; you advance plots the Player touches. The single source of truth for "what's going on" beneath the Player's view.
-- **`Game/threads.md`** — the **player-known slice** of `plots.md`: open quests, mysteries, promises the character is actually aware of. Keep it strictly derived (promote a plot here only once the Player reaches `aware`/`observing`/`participating`); mark resolved (don't delete) when paid off. Note the day each opened and closed.
-- **`Game/developments.md`** — *(GM-only)* the world's pending off-screen moves, staged by the loop with `Surface:` timing. Drain `now` items into play; mark them **drained**.
-- **`Game/world.md`** — locations, factions, lore as established or invented. **`Game/world-state.md`** *(GM-only)* — the living factions/world-clocks the metronome advances.
-- **`Cast/<name>/memory.md`** — per-character relationship and shared history, each entry day-stamped — including the "What I've learned about others" observations the loop appends.
+- **`Game/threads.md`** — the GM's running list of open quests, mysteries, and promises the character is chasing. Note the day each opened; mark resolved (don't delete) when paid off.
+- **`Game/world.md`** — locations, factions, lore as established or invented.
+- **`Cast/<name>/memory.md`** — per-character relationship and shared history, each entry day-stamped.
 - **`Character/sheet.md`** — the volatile pools (WP, Quint, Paradox, Health) are updated by `python Tools/resources.py`, not by hand. Every change is logged to `Character/resource-log.md` (GM-only, auditable). Never edit pool numbers in the sheet directly; the tool is the only writer.
 - **`Game/gm-secrets.md`** — your private plans and planned reveals. Read it, act on it, never quote it.
 - **`PLAYER-NOTES.md`** (repo root) — the **Player's spoiler-free dashboard**: a character's-eye view of what they know, what they're chasing, who's in their corner, and what's pending. This is the *one* continuity file written **for the Player to read**, so two rules govern it. **First: never put a GM secret in it** — nothing from `gm-secrets.md` or any `secrets.md`, no planned reveal, no twist the character hasn't earned in play; when in doubt, leave it out. **Second: it's a curated mirror, not a dump** — unlike `threads.md` and `current-scene.md` (your GM-facing working files, full of reminders and stakes), this is written *to the Player in the campaign's narrative voice*, carrying only what their character actually knows. Keep it current at the end of each scene/session and stamp the day. The Player owns it and may ask to add or park notes there; it reserves a "Your own notes" section for them.
@@ -366,9 +252,7 @@ Solo play's other quiet failure is *forgetting when things happened.* Without an
 
   The in-world date and time-of-day are optional flavor; **the day number is the part that must always be there**, because it's the part you can do arithmetic on. (Define the in-world calendar once in `Game/world.md` so the flavor labels stay consistent — but Day-N works even if a setting has no calendar at all.)
 
-- **Stamp every entry you log.** Prefix each appended entry with `[Day N — in-world date]` (the in-world part optional) everywhere events are recorded: `Game/timeline.md`, every `Cast/<name>/memory.md`, `Game/developments.md`, the `Opened:`/`Closed:` markers in `Game/plots.md`, and the opened/resolved markers in `Game/threads.md`. A log you can't date is a log that breeds hallucination.
-
-- **Keep the metronome in sync.** On a time-skip, advance the day count **and** pass the matching `--elapsed N` to `python Tools/world_tick.py`, so narrative time and the living-world clocks move together rather than drifting apart.
+- **Stamp every entry you log.** Prefix each appended entry with `[Day N — in-world date]` (the in-world part optional) everywhere events are recorded: `Game/timeline.md`, every `Cast/<name>/memory.md`, and the opened/resolved markers in `Game/threads.md`. A log you can't date is a log that breeds hallucination.
 
 - **Compute, don't estimate.** When you (or an NPC) need to know how long it's been, **subtract the day numbers** — never eyeball it. "She last saw you on Day 11; it's Day 14, so three days." This is the dice-fairness rule applied to time: the number is on the page, so use the number.
 
@@ -412,7 +296,7 @@ When the Player wants to wrap up, take a moment to close the loop before they go
 - Did anything happen that should change the character? **Tally the session's XP milestones, log them to the `## Advancement` ledger (day-stamped), and tell the Player what they earned and what it can buy** — the advancement backstop that catches what you missed in the moment. *(If a sourcebook's advancement rules are live, follow those instead.)*
 - Which threads opened, advanced, or closed? Update `Game/threads.md`.
 
-Then make sure `current-scene.md` and `timeline.md` reflect where things stand, refresh the Player's `PLAYER-NOTES.md` dashboard (spoiler-free — see Continuity), and offer a save point. As a last check, run **`python Tools/world_health.py`** — a deterministic drift audit (GM-only) that flags a frozen agent, a stalled clock, a world gone too quiet to generate plot, a thread left stale, an un-drained `Surface: now` beat, or a director that pre-narrated or authored the Player character, so you catch drift before it sets in. It writes only `Game/.world-health.md` and never touches your save data; act on its warnings next session.
+Then make sure `current-scene.md` and `timeline.md` reflect where things stand, refresh the Player's `PLAYER-NOTES.md` dashboard (spoiler-free — see Continuity), re-index the semantic memory if you use it (`python Tools/memory_index.py`), and offer a save point. As a last check, skim `Game/threads.md` for anything left stale or unresolved so you can pick it back up next session.
 
 ## Save points
 

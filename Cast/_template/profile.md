@@ -20,7 +20,7 @@
 - **A contradiction:** the trait at war with itself that makes them feel real (gentle but ruthless when cornered; loyal yet ambitious)
 - **Quirks & mannerisms:**
 
-## Worldview & values *(optional — for living/recurring NPCs)*
+## Worldview & values *(optional — for recurring NPCs)*
 - The value-system they reason *from* — the lens that makes their goals feel inevitable to them, not arbitrary. Seed it from a faction outlook so the cast genuinely differs: run `python Tools/cultural_profile.py <preset>` (e.g. `camarilla`, `sabbat`, `anarch`, `technocratic`, `garou-tribal`, or the generic anchors) and fold the resulting worldview sentence in here, then adjust to taste. Actor-safe — values are openly expressed; the *unadmitted* need still lives in `secrets.md`. (See `Cast/CRAFTING-NPCS.md` lever #1.)
 
 ## Background that shaped them
