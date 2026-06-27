@@ -21,7 +21,7 @@
 - **Quirks & mannerisms:**
 
 ## Worldview & values *(optional — for recurring NPCs)*
-- The value-system they reason *from* — the lens that makes their goals feel inevitable to them, not arbitrary. Seed it from a faction outlook so the cast genuinely differs: run `python Tools/cultural_profile.py <preset>` (e.g. `camarilla`, `sabbat`, `anarch`, `technocratic`, `garou-tribal`, or the generic anchors) and fold the resulting worldview sentence in here, then adjust to taste. Actor-safe — values are openly expressed; the *unadmitted* need still lives in `secrets.md`. (See `Cast/CRAFTING-NPCS.md` lever #1.)
+- The value-system they reason *from* — the lens that makes their goals feel inevitable to them, not arbitrary. Seed it from a faction outlook so the cast genuinely differs: run `python Tools/cultural_profile.py <preset>` (e.g. `tradition-mage`, `technocratic`, `nephandi`, `hollow-one`, `disparate`, or the generic anchors) and fold the resulting worldview sentence in here, then adjust to taste. Actor-safe — values are openly expressed; the *unadmitted* need still lives in `secrets.md`. (See `Cast/CRAFTING-NPCS.md` lever #1.)
 
 ## Background that shaped them
 - 1–2 formative experiences that explain who they are now — the events that left a mark, not a CV. *(A buried wound they don't understand → `secrets.md`.)*

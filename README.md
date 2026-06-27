@@ -1,14 +1,12 @@
-# Storyteller — an AI World of Darkness game master
+# Storyteller — an AI Mage: The Ascension game master
 
-An AI-run tabletop roleplaying game for the **World of Darkness**. Open this project, talk to Claude, and it becomes your **Storyteller**: it builds your character and chronicle with you, then runs an ongoing, improvised story — narrating scenes, voicing characters, rolling the dice fairly, and remembering everything between sessions. The whole chronicle can be archived as polished **fan-fiction** — chaptered prose with the dice dissolved into story.
+An AI-run tabletop roleplaying game for **Mage: The Ascension**. Open this project, talk to Claude, and it becomes your **Storyteller**: it builds your character and chronicle with you, then runs an ongoing, improvised story — narrating scenes, voicing characters, rolling the dice fairly, and remembering everything between sessions. The whole chronicle can be archived as polished **fan-fiction** — chaptered prose with the dice dissolved into story.
 
-It plays three games on the classic **Storyteller System** (d10 dice pools):
+It runs one game on the classic **Storyteller System** (d10 dice pools):
 
-- **Mage: The Ascension 20th (M20)** — belief reshapes reality, at the cost of your certainty.
-- **Vampire: The Masquerade 20th (V20)** — the monster you're becoming versus the person you were.
-- **Werewolf: The Apocalypse 20th (W20)** — primal warriors in a war against corruption they're losing.
+- **Mage: The Ascension 20th Anniversary (M20)** — belief reshapes reality, at the cost of your certainty. The nine Spheres, Arete, Quintessence and Paradox, and the Ascension War between the Traditions and the Technocracy.
 
-You pick the game (or mix them, in **crossover** play) during Session Zero. No prior tabletop or World of Darkness experience needed — the Storyteller teaches you as you go.
+At Session Zero you settle the **tone** (the M20 core rulebook's suggested tone is the default — you can dial it however you like) and create your character. No prior tabletop or Mage experience needed — the Storyteller teaches you as you go.
 
 ## Get your own copy
 
@@ -37,9 +35,9 @@ To continue later, open the project and say **"Let's keep playing."** The GM pic
 ## How play works
 
 - The Storyteller describes a scene and asks what you do. You answer in plain language — *"I search the desk," "I try to talk him down,"* whatever you want.
-- When the outcome is uncertain, the Storyteller rolls **real dice** (`Tools/dice.py`) — d10 success pools the World of Darkness way — but keeps the *numbers off the page*: you read a vivid outcome, not a stat block. Ask *"what did I roll?"* any time and it shows you the full result. The dice are never fudged; they're just invisible, so the prose reads like a story.
+- When the outcome is uncertain, the Storyteller rolls **real dice** (`Tools/dice.py`) — d10 success pools the Storyteller-System way — but keeps the *numbers off the page*: you read a vivid outcome, not a stat block. Ask *"what did I roll?"* any time and it shows you the full result. The dice are never fudged; they're just invisible, so the prose reads like a story.
 - You're one protagonist among many. The world's other characters have their own wants and agendas, and the GM moves them with its own judgment — so something you ignore can come back to find you, surfacing as live pressure or an offered hook rather than a hard interruption.
-- It runs on a faithful, lightweight **Storyteller System** scaffold so you can play right away. For your game's full rules, drop your own M20/V20/W20 book into `Sourcebooks/` and the Storyteller digests it — those rules then take over.
+- It runs on a faithful, lightweight **Storyteller System** scaffold so you can play right away. For the full rules, drop your own M20 books into `Sourcebooks/` and the Storyteller digests them — those rules then take over.
 
 You're a co-author, not just a lead: you can steer the *kind* of story you want (*"I'd love this to become a betrayal arc," "can we slow down and just talk"*) and the Storyteller adjusts.
 
@@ -51,7 +49,7 @@ You don't need any of this to play — but if you're curious how the world stays
 
 ### Fair dice, invisible mechanics
 
-Every uncertain action is resolved with a real roll (`Tools/dice.py`) — a d10 success pool, the difficulty set by the task. The result stands, win or lose, and you can audit any roll on demand (*"what did I roll?"*). But the numbers never reach the page: you read the failed lockpick or the blade that bit deeper than expected, not a stat block. Resources (Willpower, Blood, Rage, Health, Paradox…) are tracked the same way, by `Tools/resources.py`, with an auditable log — never hand-edited.
+Every uncertain action is resolved with a real roll (`Tools/dice.py`) — a d10 success pool, the difficulty set by the task. The result stands, win or lose, and you can audit any roll on demand (*"what did I roll?"*). But the numbers never reach the page: you read the failed lockpick or the blade that bit deeper than expected, not a stat block. Resources (Willpower, Quintessence, Paradox, Health…) are tracked the same way, by `Tools/resources.py`, with an auditable log — never hand-edited.
 
 ### The secrecy firewall
 
@@ -73,9 +71,9 @@ Because the mechanics stay off the page, your live play already reads as prose. 
 |--------|---------------|
 | `Character/` | Your character — sheet, backstory, portraits. |
 | `Cast/` | Every NPC and companion the Storyteller voices, one folder each (public profile + memory, plus GM-only secrets and stats). |
-| `Game/` | The chronicle's state: `system.md` (which game is live), `world.md`, `timeline.md`, `current-scene.md`, the open `threads.md`, and the GM-only `gm-secrets.md`. |
+| `Game/` | The chronicle's state: `system.md` (edition & tone in force), `world.md`, `timeline.md`, `current-scene.md`, the open `threads.md`, and the GM-only `gm-secrets.md`. |
 | `Story/` | The chronicle rendered as **fan-fiction** — chapters, an index, and a compiled export. |
-| `Sourcebooks/` | Drop your own M20/V20/W20 rulebooks and lore here for the Storyteller to digest. |
+| `Sourcebooks/` | Drop your own M20 rulebooks and lore here for the Storyteller to digest. |
 | `Tools/` | The deterministic engine: the dice roller (`dice.py`), resource tracker (`resources.py`), cultural profiles (`cultural_profile.py`), story compiler (`story_compile.py`), the safe actor-briefing assembler (`actor_brief.py`), and the hybrid semantic-memory layer. |
 | `.claude/agents/` | The GM's specialist subagents — campaign-architect, character-creator, npc-actor, chapter-renderer. |
 | `PLAYER-NOTES.md` | Your spoiler-free notebook — what you know, want, and are chasing. The GM keeps it current; you can park your own notes there too. |

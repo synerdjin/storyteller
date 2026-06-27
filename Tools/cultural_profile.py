@@ -8,12 +8,12 @@ cross-cultural frameworks so a worldview is *calibratable*, not invented:
   * Hofstede dimensions (0..100 each)
   * World Values Survey primary axes (-1..1 each)
 
-Why it's here: a cast is only as coherent as the NPCs' *motivations*. A Camarilla
-elder, a Sabbat templar, and a Glass Walker should reason from genuinely different
-values — not just different voices. This is a pure function of the numbers (no
-model call, no dependencies), so the campaign-architect can seed a cast whose
-worldviews actually differ, and you can calibrate them rather than hand-wave "he's
-the traditional one."
+Why it's here: a cast is only as coherent as the NPCs' *motivations*. A Hermetic
+traditionalist, a Technocratic field agent, and a fallen Nephandus should reason
+from genuinely different values — not just different voices. This is a pure function
+of the numbers (no model call, no dependencies), so the campaign-architect can seed a
+cast whose worldviews actually differ, and you can calibrate them rather than
+hand-wave "he's the traditional one."
 
 It produces *worldview text*, which the architect folds into an NPC's
 `profile.md` (actor-safe — values are openly expressed). It's a
@@ -21,8 +21,8 @@ Session-Zero / NPC-build aid.
 
 Usage:
     python Tools/cultural_profile.py --list             # the named presets
-    python Tools/cultural_profile.py camarilla          # worldview text for a preset
-    python Tools/cultural_profile.py camarilla --name "Prince Helena"
+    python Tools/cultural_profile.py tradition-mage     # worldview text for a preset
+    python Tools/cultural_profile.py tradition-mage --name "Lila Ngo"
     python Tools/cultural_profile.py --self-test
 """
 
@@ -113,10 +113,10 @@ def profile_to_persona(name, profile):
 
 
 # A library of value archetypes. The four generic ones are the source presets;
-# the World-of-Darkness archetypes below are *illustrative* faction outlooks —
-# calibrate the numbers (or write your own) for the chronicle you're running.
-# These describe value-systems, not splats: a Camarilla Brujah can hold an
-# 'anarch' outlook, a corporate Glass Walker a 'technocratic' one.
+# the Mage faction archetypes below are *illustrative* outlooks — calibrate the
+# numbers (or write your own) for the chronicle you're running. These describe
+# value-systems, not splats: a Hermetic mage can hold a 'technocratic' outlook,
+# a corporate technician a 'tradition-mage' one.
 PRESET_PROFILES = {
     # — generic anchors (from the_city) —
     "individualist": CulturalProfile(
@@ -139,41 +139,37 @@ PRESET_PROFILES = {
         uncertainty_avoidance=65, long_term_orientation=60,
         traditional_vs_secular=-0.4, survival_vs_self_expression=-0.3,
         norms=("defer to rank", "keep order and proper roles")),
-    # — World of Darkness faction outlooks (illustrative, calibratable) —
-    "camarilla": CulturalProfile(
-        "Camarilla", individualism=40, power_distance=88,
-        uncertainty_avoidance=70, long_term_orientation=85,
-        traditional_vs_secular=-0.4, survival_vs_self_expression=-0.4,
-        norms=("uphold the Masquerade", "respect the elders and the Traditions"),
-        taboos=("diablerie of one's betters", "breaching the Masquerade")),
-    "sabbat": CulturalProfile(
-        "Sabbat", individualism=30, power_distance=45,
-        uncertainty_avoidance=25, long_term_orientation=40,
-        traditional_vs_secular=-0.2, survival_vs_self_expression=-0.5,
-        norms=("loyalty to the pack above the self", "embrace the monster, refuse the leash"),
-        taboos=("bowing to Antediluvian masters", "cowardice before the pack")),
-    "anarch": CulturalProfile(
-        "Anarch", individualism=80, power_distance=18,
-        uncertainty_avoidance=30, traditional_vs_secular=0.5,
-        survival_vs_self_expression=0.7,
-        norms=("no one rules another by birthright", "freedom is taken, not granted")),
+    # — Mage: The Ascension faction outlooks (illustrative, calibratable) —
+    "tradition-mage": CulturalProfile(
+        "Tradition mystic", individualism=70, power_distance=35,
+        uncertainty_avoidance=30, traditional_vs_secular=0.0,
+        survival_vs_self_expression=0.8,
+        norms=("will shapes reality", "your paradigm is your truth"),
+        taboos=("surrendering wonder to the Technocracy", "betraying a fellow Tradition")),
     "technocratic": CulturalProfile(
         "Technocratic", individualism=45, power_distance=75,
         uncertainty_avoidance=92, long_term_orientation=80,
         traditional_vs_secular=0.9, survival_vs_self_expression=-0.3,
         norms=("consensus reality must be managed", "progress through control and method"),
         taboos=("reckless Reality Deviance", "unmeasured belief")),
-    "tradition-mage": CulturalProfile(
-        "Tradition mystic", individualism=70, power_distance=35,
-        uncertainty_avoidance=30, traditional_vs_secular=0.0,
-        survival_vs_self_expression=0.8,
-        norms=("will shapes reality", "your paradigm is your truth")),
-    "garou-tribal": CulturalProfile(
-        "Garou tribal", individualism=25, power_distance=80,
-        uncertainty_avoidance=55, long_term_orientation=75,
-        traditional_vs_secular=-0.6, survival_vs_self_expression=-0.4,
-        norms=("honour, glory, wisdom", "the sept and Gaia before the self"),
-        taboos=("suffering the Wyrm to live", "shaming one's auspice or totem")),
+    "nephandi": CulturalProfile(
+        "Nephandus", individualism=55, power_distance=70,
+        uncertainty_avoidance=35, long_term_orientation=30,
+        traditional_vs_secular=-0.2, survival_vs_self_expression=-0.7,
+        norms=("serve the descent", "corruption is liberation"),
+        taboos=("hope for redemption", "defying the masters below")),
+    "hollow-one": CulturalProfile(
+        "Hollow One", individualism=85, power_distance=20,
+        uncertainty_avoidance=25, long_term_orientation=35,
+        traditional_vs_secular=0.3, survival_vs_self_expression=0.85,
+        norms=("style is its own truth", "belong to no one's cause"),
+        taboos=("earnest faction loyalty", "pretending the magic isn't dying")),
+    "disparate": CulturalProfile(
+        "Disparate craft-mage", individualism=60, power_distance=45,
+        uncertainty_avoidance=45, long_term_orientation=70,
+        traditional_vs_secular=-0.5, survival_vs_self_expression=0.2,
+        norms=("keep the old craft alive", "trust your own kind first"),
+        taboos=("being absorbed by the Traditions", "selling the craft to the Technocracy")),
 }
 
 
@@ -186,17 +182,17 @@ def _self_test():
     assert _axis(0.0, "neg", "pos") == "balanced between the two"
     assert _axis(0.9, "neg", "pos") == "pos"
 
-    cam = PRESET_PROFILES["camarilla"]
-    d = describe_profile(cam)
-    assert "steep hierarchy" in d and "tradition" in d, d
-    persona = profile_to_persona("Prince Helena", cam)
-    assert persona.startswith("Prince Helena sees the world through the Camarilla outlook")
-    assert "Masquerade" in persona  # norms folded in
+    tech = PRESET_PROFILES["technocratic"]
+    d = describe_profile(tech)
+    assert "steep hierarchy" in d and "secular-rational" in d, d
+    persona = profile_to_persona("Director Voss", tech)
+    assert persona.startswith("Director Voss sees the world through the Technocratic outlook")
+    assert "consensus reality must be managed" in persona  # norms folded in
     assert profile_to_persona("X", None) == "X holds no especially marked worldview."
 
     # Contrasting presets must actually read differently (the whole point).
-    assert describe_profile(PRESET_PROFILES["anarch"]) != \
-        describe_profile(PRESET_PROFILES["camarilla"])
+    assert describe_profile(PRESET_PROFILES["tradition-mage"]) != \
+        describe_profile(PRESET_PROFILES["technocratic"])
 
     print("cultural_profile self-test: OK")
     return 0

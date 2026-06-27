@@ -11,11 +11,11 @@
 > chapters retell what the Player lived; *meanwhile* chapters follow the world's
 > other protagonists — plots that turned with or without them.
 
-- **Fandom:** World of Darkness — *(M20 / V20 / W20 — set at Session Zero)*
+- **Fandom:** Mage: The Ascension
 - **Rating / Archive warnings:** *(from `Game/boundaries.md`)*
 - **Characters:** *(the Player's character + recurring cast, as they appear)*
 - **Relationships:** *(the bonds the story actually traces)*
-- **Additional tags:** *(splat, themes, tone)*
+- **Additional tags:** *(Tradition/Craft, themes, tone)*
 - **Summary:** *(one paragraph, spoiler-light — the pitch a reader sees first.)*
 
 ## Chapters

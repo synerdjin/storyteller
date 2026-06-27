@@ -1,21 +1,20 @@
-# System — which game we're playing
+# System — how this game is set up
 
-> Set during Session Zero, **before** the character and campaign. The single source of truth for which World of Darkness game is live, its rules, and its tone. Every agent and the Storyteller read this first. Update it only with the Player's agreement (e.g. adding a sourcebook digest, turning on crossover).
+> The single source of truth for the edition, rules, and tone that are live. Every agent and the Storyteller read this first. Update it only with the Player's agreement (e.g. adding a sourcebook digest, changing a house rule).
 
 ## Game
 
-- **Primary game:** *(Mage: The Ascension 20th (M20) · Vampire: The Masquerade 20th (V20) · Werewolf: The Apocalypse 20th (W20))*
+- **Game:** Mage: The Ascension (M20) — this engine is dedicated to it.
 - **Edition / line:** *(e.g. 20th Anniversary Edition)*
-- **Core theme to lean on:** *(M20 — ascension horror · V20 — personal horror · W20 — primal/rage horror)*
-
-## Crossover
-
-- **Crossover on?** *(no · yes)*
-- **Splats in play (if yes):** *(which games share the table, and which character/NPC belongs to which)*
-- **House rule for the seam:** *(how the games' rules meet — default: each character uses their own game's traits, pools, and tone; one splat's rules never silently govern another's)*
+- **Tone:** *(default: the tone the M20 core rulebook suggests. Record here any lean the Player chose at Session Zero — e.g. grittier, more hopeful, grander, more intimate — and keep the content limits and "lines & veils" in `boundaries.md`.)*
 
 ## Rules in force
 
-- **Live sourcebook digests:** *(files under `Sourcebooks/_digests/` that override the engine defaults — list them, or "none yet: running on the CLAUDE.md Storyteller defaults")*
-- **Dice subcommand(s):** *(`m20` / `v20` / `w20` — what to pass to `Tools/dice.py`)*
+- **Live sourcebook digests** (under `Sourcebooks/_digests/`):
+  - **`M20-core.md`** — *the rules in force.* Overrides the CLAUDE.md defaults (resolution nuances, magick & Paradox, condition track/soak, XP costs). Read this for any real ruling.
+  - **`M20-how-do-you-do-that.md`** — Sphere-effects reference (expansion): what Spheres/ranks a given feat needs. Reach for it mid-scene.
+  - **`M20-book-of-secrets.md`** — character options + expanded rules (expansion): Archetypes, Merits & Flaws, stunts, Certámen. Optional subsystems off unless switched on.
+  - **`M20-gods-and-monsters.md`** — antagonist/bestiary reference (expansion) for seeding and statting opposition.
+  - **`M20-forbidden-and-forgotten-orders.md`** — extra Disparate Crafts/orders (expansion) as character/NPC options.
+- **Dice subcommand:** `m20` — what to pass to `Tools/dice.py`.
 - **House rules:** *(any tweaks the Player wants — soak, difficulty conventions, lethality, etc. Keep tone/content limits in `boundaries.md`, not here.)*

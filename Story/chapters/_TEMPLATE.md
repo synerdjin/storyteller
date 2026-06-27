@@ -4,7 +4,7 @@ title: "<Chapter Title>"
 kind: player-pov            # player-pov
 pov: player                 # "player"
 day: 1                      # campaign day this chapter opens on (Day N)
-tags: []                    # characters, relationships, warnings, splat
+tags: []                    # characters, relationships, warnings, Tradition/Craft
 warnings: []                # content warnings, from Game/boundaries.md
 summary: "<one line, spoiler-light — what a reader sees in the index>"
 ---

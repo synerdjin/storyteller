@@ -25,8 +25,8 @@ A reader of this fic is the **Player**. So a chapter must never hand them a secr
 
 ## What to write
 Render **one chapter** as `Story/chapters/NNNN-slug.md` (zero-padded number, kebab-slug title), built from `Story/chapters/_TEMPLATE.md`:
-- **Front-matter** filled: `chapter`, `title`, `kind`, `pov`, `day` (the campaign Day it opens on), `tags` (characters, relationships, warnings, splat), `warnings`, and a one-line spoiler-light `summary`.
-- **Pure prose body** — no mechanics ever reach the page: no pools, difficulties, dice, or Health boxes. Dissolve outcomes into story (the lock that wouldn't give, the blow that landed harder than expected). Lean into the live game's horror register — ascension, personal, or primal.
+- **Front-matter** filled: `chapter`, `title`, `kind`, `pov`, `day` (the campaign Day it opens on), `tags` (characters, relationships, warnings, Tradition/Craft), `warnings`, and a one-line spoiler-light `summary`.
+- **Pure prose body** — no mechanics ever reach the page: no pools, difficulties, dice, or Health boxes. Dissolve outcomes into story (the lock that wouldn't give, the blow that landed harder than expected). Lean into the tone recorded in `Game/system.md` / `Game/boundaries.md` (default: the M20 core rulebook's suggested register).
 
 Then **update `Story/index.md`**: add the chapter to the table (#, title, POV, day, summary) and, if this is the first chapter, fill the masthead from `Game/campaign.md` and `Game/boundaries.md` — keeping it **player-facing and spoiler-free**.
 
